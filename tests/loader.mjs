@@ -1,0 +1,4 @@
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
+export async function resolve(specifier,context,next){if(specifier==='cloudflare:workers')return {url:new URL('./test-env.mjs',import.meta.url).href,shortCircuit:true};if(specifier.startsWith('@/'))return {url:new URL('../'+specifier.slice(2)+'.ts',import.meta.url).href,shortCircuit:true};if(specifier==='./studio'&&context.parentURL?.endsWith('/lib/server.ts'))return {url:new URL('../lib/studio.ts',import.meta.url).href,shortCircuit:true};return next(specifier,context);}
+export async function load(url,context,next){if(url.endsWith('.ts')&&!url.includes('/node_modules/'))return {format:'module',source:ts.transpileModule(await readFile(new URL(url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText,shortCircuit:true};return next(url,context);}

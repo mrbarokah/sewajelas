@@ -1,0 +1,15 @@
+{
+  "status": "PROPOSED_NOT_IMPLEMENTED",
+  "schemaVersion": 1,
+  "isDemoFixture": true,
+  "referenceId": "fixture-a",
+  "title": "Contoh kontrakan A — bukan listing nyata",
+  "source": { "url": null, "platform": "owner-provided fixture", "capturedAt": null, "providedBy": "user", "reusePermission": "needs_confirmation" },
+  "rent": { "amount": 4500000, "currency": "IDR", "period": "month", "evidenceStatus": "fixture" },
+  "additionalCosts": { "electricity": null, "water": null, "serviceFee": null, "deposit": null },
+  "photos": [],
+  "photoPolicy": { "maxVisible": 3, "requireSource": true, "allowGeneratedPropertyEvidence": false, "emptyLabel": "Foto belum tersedia", "photoFields": ["url", "sourceUrl", "caption", "alt", "capturedAt", "reusePermission"] },
+  "claims": [{ "field": "kitchen", "value": true, "status": "fixture", "evidenceRef": "fixture-description" }],
+  "fit": { "mustHaveViolations": [], "unresolved": ["waterReliability", "repairResponsibility", "deposit"], "rankingAllowed": false, "reason": "No confirmed brief or real source evidence yet." },
+  "actions": ["view_source_when_available", "compare_after_brief_confirmation"]
+}
