@@ -1,5 +1,14 @@
 # Validation — 3 November 2026 (WIB)
 
+## Release 0.2.0 — reconnect, memory and export regression checks
+
+- **Executed:** 15 handler/helper tests and TypeScript. Tests cover explicit mode restoration, legacy mode migration, middle-turn recall input, full export round-trip/counts/revisions, persisted replies recovered without reading the initial response, duplicate recovery without a new provider call, account isolation, provider failure and overflow before billing.
+- **Executed in Cloud Chrome, 390×844 iframe:** copy/select menu layout, select-all action, copy success UI, failed-request error with mode remaining Muse, reload retaining Muse and the pending message, and history/export counts. The temporary harness used synthetic in-memory responses plus sessionStorage for reload, not production authentication or Meta. It was removed before packaging.
+- **Not independently verified:** native Android/iOS sharing, clipboard contents after HTTP-preview fallback, browser download arrival (event listener timed out), and this release with a real Meta key. Export construction and JSON round-trip are tested independently of browser download delivery.
+- **User-reported evidence:** Muse successfully handled several real conversations before this fix. That report is not a new live-provider test performed by the developer.
+- Full history is bounded explicitly at 80,000 characters; no first/middle turns are silently omitted. There is no automatic memory merge across accounts or separate sessions.
+- No database migration or vault rotation is required. Existing account state is parsed with backward-compatible optional fields.
+
 ## GitHub package verification
 
 On 3 November 2026, all 10 existing route/policy tests were rerun successfully and TypeScript passed on the unchanged application source. The sanitized export also completed a portable-profile production build. This build reused the installed dependencies through a temporary local symlink; it was not a clean dependency installation. The GitHub Actions run for source commit `37d31f989aed3cdccbc60a5cb43a07e5bbbf5bd7` subsequently passed a clean dependency install, TypeScript, all 10 tests and the production build: https://github.com/mrbarokah/sewajelas/actions/runs/41581638923 . This verifies source reproducibility in GitHub's Ubuntu runner; it does not prove live Meta behavior. Live Meta requests, hosted account persistence, and actual browser download arrival remain unverified.
@@ -11,7 +20,7 @@ Private MVP release. Not a production security certification. No public launch, 
 | Check | Status | Evidence / scope |
 |---|---|---|
 | TypeScript | EXECUTED_PASS | `tsc --noEmit` |
-| Route/policy tests | EXECUTED_PASS | 10 Node tests, actual handlers with SQLite-backed D1 test wrapper |
+| Route/policy tests | EXECUTED_PASS | 15 Node tests, actual handlers with SQLite-backed D1 test wrapper |
 | Build | EXECUTED_PASS | Vinext/Workers production bundle |
 | Local database migration | EXECUTED_PASS | All three tables present in Wrangler local D1 |
 | Unauthorized access / wrong origin | EXECUTED_PASS | 401/403 handler assertions |

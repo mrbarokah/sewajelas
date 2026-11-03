@@ -25,7 +25,7 @@ Simulasi adalah engine pola lokal yang gratis dan terbatas; koreksi contoh dapat
 
 ## Batas data
 
-30 sesi, 60 pesan per sesi, 4.000 karakter per pesan, 30 pedoman. History yang dikirim dibatasi 20 pesan/20.000 karakter; percakapan panjang dapat kehilangan konteks. Pesan disimpan hingga pengguna menghapusnya; ekspor tidak menyertakan secret. Latihan tanpa identitas hanya di memori dan hilang saat reload. Tidak ada service worker yang meng-cache percakapan privat.
+30 sesi, 200 pesan per sesi, 4.000 karakter per pesan, 30 pedoman, dengan batas total state 1,9 MB. Semua pesan sesi aktif dikirim berurutan ke Muse, hingga 80.000 karakter. Jika batas tercapai, permintaan dihentikan dengan pesan yang jelas; riwayat tidak dipangkas diam-diam. Koneksi dan mode dipulihkan dari akun. Tanpa identitas yang berhasil dimuat, pengiriman diblokir agar riwayat tidak terpisah. Ekspor JSON memuat semua sesi dalam snapshot, jumlah pesan, pedoman, revisi jawaban, draf, waktu dan status penyimpanan; secret tidak disertakan. Memori tidak otomatis menyatukan sesi atau akun berbeda. Tidak ada service worker yang meng-cache percakapan privat.
 
 ## Menjalankan dan menguji
 

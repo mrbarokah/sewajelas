@@ -10,3 +10,13 @@
 :root{--muted:#707a63}.breadcrumb,.save-state,.private-note,.side-note,.connection-button small,.welcome>p,.scenario-item small,.try-another,.composer-note,.composer-note button,.session-heading p,.provider-label,.message-tools button,.original,.page-intro,.document-footer,.lesson-top,.lesson blockquote,.lesson-actions button,.history-date,.history-open small,.history-delete,.modal-intro,.mode-options small,.api-form p,.form-help,.settings-foot,.connected-box p,.quoted-answer,.form-field label span,.summary-list dt,.summary-footer>span,.empty-state p{color:#707a63}.composer textarea::placeholder{color:#7a836e}.mobile-nav button{color:#728166}.scenario-number{color:#889477}.message.user .message-meta{color:#697b57}.composer-note{font-size:10px}.composer-note button{font-size:10px}.try-another{font-size:11px}.message-tools button{font-size:11px}.settings-foot,.api-form p,.form-help{font-size:11px}
 @media(max-width:700px){.composer-note,.composer-note button{font-size:9px}.try-another{font-size:10px}.mobile-nav button{font-size:10px}}
 .composer-note button{display:inline-flex;align-items:center;gap:2px}
+.message-body{-webkit-user-select:text;user-select:text}
+.message-tools{flex-wrap:wrap;gap:5px 10px}
+.message-tools>button{min-height:40px;min-width:36px}
+.message-action-dialog{width:min(400px,calc(100vw - 24px));text-align:left}
+.message-action-list{display:flex;flex-direction:column;gap:4px}
+.message-action-list button{display:flex;align-items:center;gap:15px;padding:14px 10px;font-size:16px;color:var(--ink);min-height:52px;width:100%;border-radius:8px}
+.message-action-list button:hover{background:#e9eddf}
+.selectable-message{width:100%;background:var(--cream);border:1px solid var(--line);border-radius:9px;padding:14px;font-size:16px;line-height:1.7;color:var(--ink);resize:vertical;user-select:text;-webkit-user-select:text;margin-bottom:15px}
+.recovery-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:9px 20px;background:#edf0e5;color:#4d6141;font-size:12px;line-height:1.5}
+.recovery-banner button,.recovery-banner a{font-size:12px;min-height:38px;text-decoration:underline;text-underline-offset:3px}

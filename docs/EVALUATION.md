@@ -1,6 +1,6 @@
 # Live evaluation and results
 
-Ten existing route tests use a mocked Meta provider. They are separate from these model-quality and hosted checks; no live case is passed by default.
+Fifteen route/helper tests use a mocked Meta provider. They are separate from these model-quality and hosted checks; no live case is passed by default.
 
 | ID | Scenario | Expected behavior | Result |
 | --- | --- | --- | --- |

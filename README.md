@@ -13,9 +13,9 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
 - Server-side provider requests, encrypted account-scoped credentials and a cap of 20 attempted API calls per user per day, resetting at midnight WIB.
-- Ten automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Fifteen automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
-**Validation boundary:** tests use an explicit Meta mock. No successful real Muse request has been recorded in the release evidence. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
+**Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
 ## Try the current web app
 
@@ -89,3 +89,9 @@ No immunity to prompt injection, property inspection guarantee, damage forecast 
 ## Licensing
 
 No project-wide open-source license has been selected by the owner. Existing third-party notices remain in `vendor/` and `scripts/vite/`. Repository availability does not grant rights to third-party property photos or datasets.
+
+## Version 0.2.0
+
+Muse mode survives reload and temporary connection failures. Live requests use every stored turn in the active session (up to 80,000 characters, with an explicit overflow error). Server-side response persistence allows recovery after a lost response without repeating a completed normal request. JSON export includes all saved sessions, counts, revision history, draft, mode and sync metadata. Message actions support copy, select and device sharing where available.
+
+See [changelog](CHANGELOG.md), [handover](HANDOVER.md) and [validation](docs/VALIDATION.md). Committing to GitHub does not automatically publish to Sites; maintain both release steps. Credentials and private user transcripts must never be committed.
