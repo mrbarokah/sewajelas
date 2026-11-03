@@ -232,3 +232,11 @@ test('provider rate headers are optional window data, never a fabricated credit 
  assert.equal(readRateHeaders(new Headers()),null);assert.equal(readRateHeaders(new Headers({'x-ratelimit-limit-tokens':'100','x-ratelimit-remaining-tokens':'101'})),null);
  const rate=readRateHeaders(new Headers({'x-ratelimit-limit-tokens':'1000','x-ratelimit-remaining-tokens':'900'}));assert.equal(rate.limit,1000);assert.equal(rate.remaining,900);assert.ok(!('balance' in rate));
 });
+
+test('profile-based search excludes generic request and includes workplace explicitly',async()=>{
+ const {buildProfileQuery}=await import('../lib/search.ts');const {profileSchema,blankProfile}=await import('../lib/profile.ts');
+ const fact=value=>({value,locked:false,source:'chat',updatedAt:'now'});const profile={...blankProfile,facts:{housing:fact('kontrakan rumah'),location:fact('Depok UI'),budget:fact('20 juta per tahun'),workLocation:fact('Pancoran Jakarta Selatan')}};
+ assert.equal(profileSchema.safeParse(profile).success,true);assert.equal(profileSchema.safeParse(blankProfile).success,true);
+ const query=buildProfileQuery(profile,'Carikan kontrakan sesuai profil saya');assert.match(query,/Pancoran Jakarta Selatan/);assert.match(query,/Depok UI/);assert.doesNotMatch(query,/carikan|sesuai profil/i);
+ assert.match(buildProfileQuery(profile,'Carikan kos Tebet'),/kos Tebet/);
+});

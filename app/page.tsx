@@ -4,7 +4,7 @@ import { ArrowUp, ArrowUpRight, Check, CheckCheck, ChevronDown, ChevronLeft, Dow
 import { DEFAULT_MODEL,modelLabel,type ChatModel } from '@/lib/models';
 import { HousingProfileEditor } from '@/components/housing-profile';
 import { blankProfile } from '@/lib/profile';
-import { wantsSearch,approvesSearch,declinesSearch } from '@/lib/search';
+import { wantsSearch,approvesSearch,declinesSearch,buildProfileQuery } from '@/lib/search';
 import { Target } from 'lucide-react';
 import { MessageActions,MessageBody } from '@/components/message-actions';
 import { APP_VERSION, MAX_MESSAGES, restoredMode, replaceReply, exportJson, exportCounts, demoReply, emptyState, exportMarkdown, opening, scenarios, sessionSummary, type Lesson, type Message, type Session, type StudioState } from '@/lib/studio';
@@ -122,7 +122,7 @@ export default function Studio(){
    if(isApproval&&proposal){await executeChatSearch(next,proposal,userMessage);return;}
    if(proposal?.searchProposal&&declinesSearch(content)){await updateSession({...next,messages:[...next.messages,{id:uid(),role:'assistant',content:'Baik, aku tidak akan mencari dulu. Beri tahu aku kalau kamu ingin melanjutkan.',provider:'demo'}]});setBusy(false);return;}
    if(s.role==='renter'&&wantsSearch(content)){
-    const p=dataRef.current.profile??blankProfile;const pieces=[p.facts.housing?.value,p.facts.location?.value,p.facts.budget?.value,p.facts.costScope?.value,content].filter(Boolean);const query=pieces.join(' · ').slice(0,600);
+    const p=dataRef.current.profile??blankProfile;const query=buildProfileQuery(p,content);if(query.length<3){await updateSession({...next,messages:[...next.messages,{id:uid(),role:'assistant',content:'Aku perlu jenis hunian atau lokasi untuk memulai. Kamu ingin mencari di daerah mana?',provider:'demo'}]});setBusy(false);return;}
     const note=`Aku bisa mencari sumber hunian publik dengan kata kunci ini:\n\n${query}\n\nKata kunci tersebut akan dikirim ke Meta dan penggunaan mengikuti saldo API. Hasil tidak mencakup semua listing; aku tidak akan menghubungi pemilik. Pilih apakah kamu ingin melanjutkan pencarian.`;
     await updateSession({...next,messages:[...next.messages,{id:uid(),role:'assistant',content:note,provider:'demo',searchProposal:{query}}]});setBusy(false);return;
    }

@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.4.6** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.4.7** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
@@ -17,7 +17,7 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
 - Server-side provider requests, encrypted account-scoped credentials and daily usage accounting without an application-imposed daily cap; provider rates and limits still apply.
-- Thirty automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Thirty-one automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
 **Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
@@ -107,7 +107,7 @@ Chat labels now show the complete model name; user-name labels and inline copy b
 
 ## Release history: persistent profile and supervised discovery (introduced in 0.4.0)
 
-Open the floating menu → **Profil & tujuan**. A single current rental goal and eight housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and evidence-bound profile updates. Since 0.4.1, an explicit request to save an interview can use evidence from earlier user messages in the same session. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
+Open the floating menu → **Profil & tujuan**. A single current rental goal and nine housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and evidence-bound profile updates. Since 0.4.1, an explicit request to save an interview can use evidence from earlier user messages in the same session. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
 
 In a renter chat, ask to search, review the exact query in the conversation, then select **Setuju, lanjutkan** or **Batal** in the chat. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
 
@@ -131,3 +131,5 @@ This README is maintained separately from the deployed Site. A documentation-onl
 - **0.4.5:** Search approval and cancellation buttons appear inside the conversation; decisions remain subject to server-side checks.
 
 - **0.4.6:** Approved searches use background responses with recoverable status polling. Usage settings show locally recorded daily tokens and provider rate-limit headers when present; these do not show remaining credit. Live-provider testing remains necessary.
+
+- **0.4.7:** Add work location and construct profile-based search queries without generic instructions. Route distances are not calculated. Live search is still reported broken and requires investigation; no live success is claimed.

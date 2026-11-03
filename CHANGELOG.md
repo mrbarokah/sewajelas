@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.7 — 2026-11-03
+
+- Construct reviewable search keywords from profile fields without appending generic user instructions, retaining additional user-specified terms.
+- Add editable work location to profile and include it in approved search context; route distance is not calculated or invented.
+- Search remains a reported unresolved live issue. No successful live Meta search is claimed.
+
 ## 0.4.6 — 2026-11-03
 
 - Submit approved search to Meta Responses in background, persist its response ID and poll via short authenticated requests. Recover known running jobs after reload and prevent repeat submissions for the same approval. Unknown submission state is not silently retried.

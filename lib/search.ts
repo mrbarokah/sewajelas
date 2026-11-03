@@ -19,3 +19,12 @@ export function parseSearch(raw:unknown){
 export function wantsSearch(text:string){const t=text.toLowerCase();if(/\b(jangan|tidak usah|gak usah|nggak usah|belum|batal)\b.{0,30}\b(cari|carikan|pencarian)/i.test(t))return false;return /\b(carikan|cariin|cari|search|telusuri|temukan)\b/i.test(t)&&(/\b(kos|kost|kontrakan|rumah|hunian|listing|properti|sewa|opsi|pilihan|unit|tempat tinggal|listingnya|kontrakannya|kosannya|rumahnya)\b/i.test(t)||/\b(lanjut|sekarang|tolong|dong|ya|nya)\b/i.test(t));}
 export function approvesSearch(text:string){return /^(?:ya|iya|iyah|yes|oke|ok|boleh|setuju|silakan|silahkan|lanjut|lanjutkan|cari sekarang|ya cari|ya carikan|boleh cari|setuju cari|oke cari|iya cari|ya lanjut|setuju, lanjutkan)(?:[.!\s]*)$/i.test(text.trim());}
 export function declinesSearch(text:string){return /^(?:tidak|tidak dulu|nggak|gak|jangan|batal|cancel|nanti saja|belum)(?:[.!\s]*)$/i.test(text.trim());}
+
+// Build a reviewable, minimal query from saved fields; the instruction itself is not a search keyword.
+export function buildProfileQuery(profile:{facts:Record<string,{value:string}|undefined>},instruction:string){
+ const words=instruction.trim().replace(/\b(?:tolong|mohon|please|dong|sekarang|lanjut|lanjutkan|ya|iya|oke|ok)\b/gi,' ').replace(/\b(?:carikan|cariin|cari|search|telusuri|temukan)\b/gi,' ').replace(/\b(?:sesuai|berdasarkan|dari|menurut)\s+(?:dengan\s+)?(?:profil|profile|kebutuhan|tujuan)(?:\s+saya|\s+aku|\s+ku)?\b/gi,' ').replace(/\s+/g,' ').replace(/^[\s,.?!:;·-]+|[\s,.?!:;·-]+$/g,'').trim();
+ const f=profile.facts;const pieces=[f.housing?.value,f.location?.value,f.budget?.value,f.costScope?.value,f.workLocation?.value?'lokasi kerja '+f.workLocation.value:undefined];
+ const base=pieces.filter((v):v is string=>!!v?.trim()).map(v=>v.trim());
+ if(words&&!base.some(v=>v.toLowerCase().includes(words.toLowerCase())))base.push(words);
+ return base.join(' · ').slice(0,600);
+}

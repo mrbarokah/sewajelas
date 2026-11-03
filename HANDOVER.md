@@ -1,6 +1,6 @@
 # SewaJelas handover
 
-Current application version: **0.4.6**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
+Current application version: **0.4.7**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
 
 ## Product and constraints
 
@@ -50,3 +50,5 @@ Preserve optional profile/searches/sources/searchId fields when editing state. N
 0.4.5 adds in-chat approval and cancellation buttons, preserving typed consent compatibility and server checks. QA used synthetic provider data; real Meta search remains unverified.
 
 0.4.6 submits approved search as a Meta background response and saves providerResponseId before polling /api/search/status. Never automatically repeat unknown submissions. GET polling may be repeated safely; final state is revision-checked. A crash before response ID persistence remains ambiguous. Usage counts are local daily successful-token totals; provider per-minute header is transient, shared team/model and not credit. Live Meta validation remains pending.
+
+0.4.7 adds workLocation and profile-based search query cleanup. Search is still user-reported broken on 0.4.6 and has not been live-verified on 0.4.7. Distance/routing is not integrated. See MASTER_HANDOVER.md.
