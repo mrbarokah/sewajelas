@@ -167,3 +167,10 @@ test('failed search retains approval and cannot silently repeat it',async()=>{
  const task={id:crypto.randomUUID(),sessionId:s.id,query:'kos Tebet',approved:true};const original=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return new Response('',{status:403});};
  try{assert.equal((await search(req('/api/search',user,'POST',task))).status,502);const out=await (await GET(req('/api/studio',user))).json();assert.equal(out.state.searches[0].status,'failed');assert.equal(out.state.sessions[0].messages.length,2);assert.equal((await (await search(req('/api/search',user,'POST',task))).json()).cached,true);assert.equal(calls,1);}finally{globalThis.fetch=original;}
 });
+
+test('explicit save imports evidenced facts from earlier user turns but not assistant, and respects locks',()=>{
+ const history=[{id:'u1',role:'user',content:'Saya mencari kontrakan di Tebet dengan anggaran 20 juta per tahun.'},{id:'a1',role:'assistant',content:'Kamu ingin garasi dan kolam renang.'},{id:'u2',role:'user',content:'Tolong simpan hasil interview ke profil dan tujuan.'}];
+ const result={reply:'Aku catat.',updates:[{field:'location',value:'Tebet',evidence:'Tebet'},{field:'budget',value:'20 juta per tahun',evidence:'20 juta per tahun'},{field:'mustHave',value:'kolam renang',evidence:'kolam renang'}],goal:{title:'Mencari kontrakan di Tebet',status:'tracking',evidence:'mencari kontrakan di Tebet'}};
+ const out=applyMemory(blankProfile,result,history[2],'renter',history);assert.equal(out.facts.location.messageId,'u1');assert.equal(out.facts.budget.value,'20 juta per tahun');assert.equal(out.facts.mustHave,undefined);assert.equal(out.goal.title,'Mencari kontrakan di Tebet');
+ assert.equal(applyMemory(blankProfile,result,{id:'x',content:'Terima kasih'},'renter',history).facts.location,undefined);
+});

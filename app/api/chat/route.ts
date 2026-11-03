@@ -40,7 +40,7 @@ export async function POST(req:Request){try{
  if(session&&saved.success){
   const reply:Message={id:retry?.id??crypto.randomUUID(),role:'assistant',content:answer.content,provider:'live',model:snapshot.state.selectedModel??DEFAULT_MODEL,replyTo:saved.data.lastUserId};
   const updated={...session,messages:retry?session.messages.map(m=>m.id===retry.id?replaceReply(m,reply):m):[...session.messages,reply]};
-  const state={...snapshot.state,...(memory?{profile:applyMemory(profile,memory,messages.filter(m=>m.role==='user').at(-1)!,role)}:{}),sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
+  const state={...snapshot.state,...(memory?{profile:applyMemory(profile,memory,messages.filter(m=>m.role==='user').at(-1)!,role,messages)}:{}),sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
   // Save before returning: a disconnected browser can recover this reply on reload.
   const revision=await writeState(user,snapshot.revision,state);
   return json({content:answer.content,provider:'live',state,revision,usage:await quota(user)});

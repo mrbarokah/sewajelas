@@ -1,6 +1,6 @@
 # SewaJelas handover
 
-Current application version: **0.4.0**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
+Current application version: **0.4.1**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
 
 ## Product and constraints
 

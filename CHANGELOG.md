@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 — 2026-11-03
+
+- Allow explicit requests to save a completed renter interview to use evidence from earlier user messages in the same session, while keeping manual locks and excluding assistant messages.
+- Add a regression test and a portable agent handover. Live provider verification remains outstanding.
+
 ## 0.4.0 — 2026-11-03
 
 - Persist an editable housing profile and current goal across chat sessions. Extract changes from the latest renter message alongside the reply in one structured-output call. Preserve evidence, manual locks and opt-out; exclude owner roleplay.
