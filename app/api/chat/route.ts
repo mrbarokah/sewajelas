@@ -1,3 +1,5 @@
+import { blankProfile,memoryPrompt,memoryFormat,memoryReplySchema,applyMemory } from '@/lib/profile';
+import { DEFAULT_MODEL } from '@/lib/models';
 import { z } from 'zod';
 import { messageSchema,makePrompt,compactHistory,replaceReply,MAX_MESSAGES,type Message } from '@/lib/studio';
 import { body,failure,identity,json,sameOrigin,ApiError,getKey,readState,writeState,reserve,metaCall,addUsage,quota } from '@/lib/server';
@@ -29,12 +31,16 @@ export async function POST(req:Request){try{
  const key=await getKey(user);if(!key)throw new ApiError(409,'Kunci Muse belum terhubung. Mode Muse tetap dipilih; hubungkan kembali di pengaturan.');
  const role=session?.role??(old.success?old.data.role:'renter');const scenario=session?.scenario??(old.success?old.data.scenario:'intro');
  await reserve(user);
- const answer=await metaCall(key,[{role:'developer',content:makePrompt(role,scenario,snapshot.state.lessons)},...history]);
+ const useMemory=!!session&&role==='renter';
+ const profile=snapshot.state.profile??blankProfile;
+ const answer=await metaCall(key,[{role:'developer',content:makePrompt(role,scenario,snapshot.state.lessons)+(useMemory?memoryPrompt(profile):'')},...history],2048,snapshot.state.selectedModel??DEFAULT_MODEL,useMemory?memoryFormat:undefined);
+ let memory:ReturnType<typeof memoryReplySchema.parse>|undefined;
+ if(useMemory){try{memory=memoryReplySchema.parse(JSON.parse(answer.content));answer.content=memory.reply;}catch{throw new ApiError(502,'Muse mengirim format ingatan yang belum valid. Pesanmu tetap tersimpan; coba lagi.');}}
  await addUsage(user,answer.input,answer.output);
  if(session&&saved.success){
-  const reply:Message={id:retry?.id??crypto.randomUUID(),role:'assistant',content:answer.content,provider:'live',replyTo:saved.data.lastUserId};
+  const reply:Message={id:retry?.id??crypto.randomUUID(),role:'assistant',content:answer.content,provider:'live',model:snapshot.state.selectedModel??DEFAULT_MODEL,replyTo:saved.data.lastUserId};
   const updated={...session,messages:retry?session.messages.map(m=>m.id===retry.id?replaceReply(m,reply):m):[...session.messages,reply]};
-  const state={...snapshot.state,sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
+  const state={...snapshot.state,...(memory?{profile:applyMemory(profile,memory,messages.filter(m=>m.role==='user').at(-1)!,role)}:{}),sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
   // Save before returning: a disconnected browser can recover this reply on reload.
   const revision=await writeState(user,snapshot.revision,state);
   return json({content:answer.content,provider:'live',state,revision,usage:await quota(user)});

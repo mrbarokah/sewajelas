@@ -1,5 +1,23 @@
 # Validation — 3 November 2026 (WIB)
 
+## Release 0.4.0 — persistent profile and supervised search
+
+- Executed: 22 route/helper tests. New coverage: evidence-bound profile extraction, manual locks, auto-save opt-out, owner exclusion, profile injection across sessions, actual-tool/citation validation, search approval/auth/origin checks, no private-profile disclosure to search, durable idempotency, failed-search audit, and JSON inclusion.
+- Executed in Cloud Chrome, synthetic 390×844 harness: profile editor, manual save/automatic lock, floating navigation, query review, explicit approval and source-card rendering. The harness never called the real provider or social sites and is removed before release.
+- TypeScript and production build are release gates. Real-key structured output and web_search access/quality remain to be tested by the owner through the app; this is not a claim of an end-to-end live Meta search. Physical Android/iOS touch and native sharing remain untested.
+- Current goal status is bookkeeping, not a scheduler. Direct Meta social API connectors, all-Marketplace coverage, three listing images, outbound contact, and autonomous production execution are not shipped.
+- Provider output and source content remain untrusted. Schema validation and evidence checks reduce mistakes but do not prove immunity to prompt injection or semantic extraction errors.
+
+
+## Release 0.3.0 — compact chat and model selection
+
+- **Executed:** 17 route/helper tests and TypeScript. Two added cases cover credential-scoped catalog retrieval, auth/errors, filtering of unsupported/Contributor models, no generation quota use, selected model sent to provider, model preserved in revisions and exports.
+- **Executed in Cloud Chrome with synthetic responses:** 390×844 responsive layout without bottom navigation or visible copy buttons; stationary 700 ms mouse hold opens the message menu; select-text view; floating drawer and settings navigation; catalog loading and choosing Muse Spark 1.2 updates the selected model. Initial header 1.3 alongside a historical 1.2 reply verifies per-message labeling.
+- **Not run:** physical Android/iOS touch gestures and native share sheet; real-key catalog response or live generation with a switched model. Synthetic preview harness is removed before release.
+- Design preview generated from the user's markup is a visual concept, not a production screenshot or test result.
+- Official protocol reviewed: https://dev.meta.ai/docs/api-reference/models/list-models and https://dev.meta.ai/docs/protocols/chat-completions .
+
+
 ## Release 0.2.0 — reconnect, memory and export regression checks
 
 - **Executed:** 15 handler/helper tests and TypeScript. Tests cover explicit mode restoration, legacy mode migration, middle-turn recall input, full export round-trip/counts/revisions, persisted replies recovered without reading the initial response, duplicate recovery without a new provider call, account isolation, provider failure and overflow before billing.
@@ -8,12 +26,6 @@
 - **User-reported evidence:** Muse successfully handled several real conversations before this fix. That report is not a new live-provider test performed by the developer.
 - Full history is bounded explicitly at 80,000 characters; no first/middle turns are silently omitted. There is no automatic memory merge across accounts or separate sessions.
 - No database migration or vault rotation is required. Existing account state is parsed with backward-compatible optional fields.
-
-## GitHub package verification
-
-On 3 November 2026, all 10 existing route/policy tests were rerun successfully and TypeScript passed on the unchanged application source. The sanitized export also completed a portable-profile production build. This build reused the installed dependencies through a temporary local symlink; it was not a clean dependency installation. The GitHub Actions run for source commit `37d31f989aed3cdccbc60a5cb43a07e5bbbf5bd7` subsequently passed a clean dependency install, TypeScript, all 10 tests and the production build: https://github.com/mrbarokah/sewajelas/actions/runs/41581638923 . This verifies source reproducibility in GitHub's Ubuntu runner; it does not prove live Meta behavior. Live Meta requests, hosted account persistence, and actual browser download arrival remain unverified.
-
-The build emitted a Vinext static-route classification notice; compilation completed successfully. The dependency symlink and generated output are excluded from the distribution.
 
 Private MVP release. Not a production security certification. No public launch, autonomous outreach or housing eligibility decisions.
 
@@ -45,10 +57,10 @@ Private MVP release. Not a production security certification. No public launch, 
 
 ## Remaining limits
 
-Prompt constraints reduce misuse, but do not prove immunity to prompt injection. No external tool is exposed to the model, and API keys never enter its prompt. Test live responses adversarially before adding external tools.
+Prompt constraints reduce misuse, but do not prove immunity to prompt injection. The chat model has no external tools. The separately approved search call exposes only provider web_search; API keys never enter prompts. Test live responses adversarially before adding external tools.
 
 The summary is a quote-based extraction from user text and can miss or select an older statement. It is explicitly labelled as a non-verified excerpt, not property verification.
 
 The UI does not claim free Muse usage. Token accounting covers successful responses only; a provider may charge failed or incomplete responses. Request caps count attempts to bound retries.
 
-Source originated from a private Site repository. The browser QA screenshot is excluded from this distribution. No test key is a real credential.
+Source is a private Site repository. The screenshot in this directory contains fictional test data only. No test key is a real credential.

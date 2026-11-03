@@ -4,7 +4,7 @@
 
 SewaJelas starts from a personal problem: a cheap rental can hide unreliable water, damp rooms, extra fees and unclear repair responsibilities. The long-term product helps renters compare evidence without making landlords relist their properties.
 
-**This release is the conversation rehearsal MVP.** It does not search housing platforms, display property cards, contact landlords, negotiate, or take payments. Those capabilities are planned, not completed integrations. Hackathon eligibility and final submission requirements remain to be confirmed.
+**This release is a supervised rental-assistant MVP.** It stores an editable housing profile/current goal and can search public web sources after explicit approval. It does not provide unrestricted social-platform access, contact landlords, negotiate or take payments. Hackathon eligibility and final submission requirements remain to be confirmed.
 
 ## What works now
 
@@ -13,7 +13,7 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
 - Server-side provider requests, encrypted account-scoped credentials and a cap of 20 attempted API calls per user per day, resetting at midnight WIB.
-- Fifteen automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Twenty-two automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
 **Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
@@ -30,7 +30,7 @@ ChatGPT sign-in supplies application identity; it does not supply Meta API credi
 
 ## Meta integration
 
-`lib/server.ts` calls `https://api.meta.ai/v1/chat/completions` with `muse-spark-1.3`, a `developer` message, bounded history, `reasoning_effort: minimal`, and a completion-token cap. Keys never enter prompts or client responses. Failures are surfaced; failed live requests do not silently become simulated answers.
+`lib/server.ts` calls `https://api.meta.ai/v1/chat/completions` with a supported account-selected Standard Muse Spark model (default `muse-spark-1.3`), a `developer` message, bounded history, `reasoning_effort: minimal`, and a completion-token cap. Keys never enter prompts or client responses. Failures are surfaced; failed live requests do not silently become simulated answers.
 
 Protocol reference: https://dev.meta.ai/docs/protocols/chat-completions . Actual credential access and output quality still require a live test.
 
@@ -95,3 +95,20 @@ No project-wide open-source license has been selected by the owner. Existing thi
 Muse mode survives reload and temporary connection failures. Live requests use every stored turn in the active session (up to 80,000 characters, with an explicit overflow error). Server-side response persistence allows recovery after a lost response without repeating a completed normal request. JSON export includes all saved sessions, counts, revision history, draft, mode and sync metadata. Message actions support copy, select and device sharing where available.
 
 See [changelog](CHANGELOG.md), [handover](HANDOVER.md) and [validation](docs/VALIDATION.md). Committing to GitHub does not automatically publish to Sites; maintain both release steps. Credentials and private user transcripts must never be committed.
+
+
+## Version 0.3.0
+
+Chat labels now show the complete model name; user-name labels and inline copy buttons are removed. Open ⋯ or hold a message for copy/select/share. A floating upper-left drawer contains navigation and the rehearsal disclosure. Click the model header, then **Periksa model dari API key** to load compatible account models and choose Standard Muse Spark 1.1–1.3. A selection changes future replies; past replies keep their recorded model. Contributor/image/audio models are not automatically enabled.
+
+## Persistent profile and supervised discovery (0.4.0)
+
+Open the floating menu → **Profil & tujuan**. A single current rental goal and nine housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and latest-user evidence-bound profile updates. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
+
+Press **Cari** in a renter chat, review the exact query, then approve. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
+
+Profiles, goals, sources and search logs are included in JSON exports. Chat history and encrypted credentials remain account scoped. Maximum 30 retained search jobs; no automatic retry of an approval ID. A running job after an interrupted process is unconfirmed and must not be presented as completed.
+
+Autonomous production tasks are deferred: first implement an explicit task scope, time/budget limits, cancellation, queue, provider permissions and separate outreach approval. Search approval is not permission to contact, book or pay. Listing photos and Telegram are not shipped.
+
+Official protocol references: https://dev.meta.ai/docs/structured-output and https://dev.meta.ai/docs/search-grounding . New live structured-output/search access is not independently tested with the owner's key; route and UI tests use synthetic data.

@@ -1,3 +1,5 @@
+import { GET as listModels } from '../app/api/models/route.ts';
+import { compatibleModels,modelLabel } from '../lib/models.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyState,stateSchema,compactHistory,makePrompt,demoReply,exportMarkdown,restoredMode,replaceReply,exportJson,exportCounts,MAX_CONTEXT_CHARS } from '../lib/studio.ts';
@@ -59,7 +61,7 @@ test('live reconnect uses saved full context; response persists before delivery;
  assert.equal((await PUT(req('/api/studio',user,'PUT',{revision:0,state:snapshot}))).status,200);
  const cipher=await encrypt('synthetic-key',user);await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,cipher,0).run();
  const originalFetch=globalThis.fetch;const calls=[];
- globalThis.fetch=async(url,init)=>{calls.push(JSON.parse(init.body));return Response.json({choices:[{message:{content:`Balasan lengkap ${calls.length}`},finish_reason:'stop'}]});};
+ globalThis.fetch=async(url,init)=>{calls.push(JSON.parse(init.body));return Response.json({choices:[{message:{content:JSON.stringify({reply:`Balasan lengkap ${calls.length}`,updates:[],goal:null})},finish_reason:'stop'}]});};
  try{
   const payload={sessionId:s.id,lastUserId:'m24'};
   const res=await chat(req('/api/chat',user,'POST',payload));assert.equal(res.status,200);
@@ -91,4 +93,77 @@ test('provider failure preserves pending turn and live preference; oversized con
   await PUT(req('/api/studio',user,'PUT',{revision:persisted.revision,state:long}));
   assert.equal((await chat(req('/api/chat',user,'POST',{sessionId:s.id,lastUserId:'m24'}))).status,413);assert.equal((await quota(user)).count,1);
  }finally{globalThis.fetch=originalFetch;}
+});
+
+
+test('model catalog is account-scoped, filters incompatible/contributor models, and does not spend generation quota',async()=>{
+ assert.equal((await listModels(req('/api/models',null))).status,401);
+ assert.equal((await listModels(req('/api/models','missing-model-key'))).status,409);
+ assert.deepEqual(compatibleModels({data:[{id:'muse-spark-1.2'},{id:'muse-spark-1.3-contributor'},{id:'muse-image-1.0'},{id:'muse-spark-1.3'},null]}),['muse-spark-1.3','muse-spark-1.2']);
+ assert.throws(()=>compatibleModels({error:'bad'}));assert.equal(modelLabel('muse-spark-1.2'),'Muse Spark 1.2');
+ const user='model-catalog';await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-model-key',user),0).run();
+ const original=globalThis.fetch;let seen;
+ globalThis.fetch=async(url,init)=>{seen={url,init};return Response.json({data:[{id:'muse-spark-1.1'}]});};
+ try{const res=await listModels(req('/api/models',user));assert.equal(res.status,200);const value=await res.json();assert.equal(value.models[0].id,'muse-spark-1.1');assert.equal(seen.url,'https://api.meta.ai/v1/models');assert.equal(seen.init.headers.Authorization,'Bearer fake-model-key');assert.ok(!JSON.stringify(value).includes('fake-model-key'));assert.equal((await quota(user)).count,0);
+ globalThis.fetch=async()=>new Response('',{status:403});assert.equal((await listModels(req('/api/models',user))).status,502);
+ }finally{globalThis.fetch=original;}
+});
+test('selected model reaches provider, persists on reply and revisions, and survives JSON export',async()=>{
+ const user='selected-model',s=interview();const snapshot={...emptyState,selectedModel:'muse-spark-1.2',preferredMode:'live',activeSessionId:s.id,sessions:[s]};
+ assert.equal(stateSchema.safeParse({...snapshot,selectedModel:'arbitrary-endpoint'}).success,false);
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:snapshot}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-selected-key',user),0).run();
+ const original=globalThis.fetch;let model;
+ globalThis.fetch=async(url,init)=>{model=JSON.parse(init.body).model;return Response.json({choices:[{message:{content:JSON.stringify({reply:'Balasan model terpilih',updates:[],goal:null})},finish_reason:'stop'}]});};
+ try{const res=await chat(req('/api/chat',user,'POST',{sessionId:s.id,lastUserId:'m24'}));assert.equal(res.status,200);const result=await res.json();assert.equal(model,'muse-spark-1.2');const reply=result.state.sessions[0].messages.at(-1);assert.equal(reply.model,'muse-spark-1.2');
+ assert.equal(replaceReply(reply,{...reply,model:'muse-spark-1.3',content:'Baru'}).revisions[0].model,'muse-spark-1.2');
+ const out=exportJson(result.state,{revision:result.revision,saved:true,mode:'live'});assert.equal(out.context.model,'muse-spark-1.2');assert.equal(out.sessions[0].messages.at(-1).model,'muse-spark-1.2');
+ }finally{globalThis.fetch=original;}
+});
+
+import { blankProfile,applyMemory } from '../lib/profile.ts';
+import { parseSearch,metaUrl } from '../lib/search.ts';
+import { POST as search } from '../app/api/search/route.ts';
+test('memory uses quoted latest-user evidence, manual locks, opt-out and renter role',()=>{
+ const p={...structuredClone(blankProfile),facts:{budget:{value:'24 juta/tahun',locked:true,source:'manual',updatedAt:'now'}}};
+ const out={reply:'Baik.',updates:[{field:'location',value:'Tebet',evidence:'Tebet'},{field:'budget',value:'12 juta',evidence:'12 juta'},{field:'moveIn',value:'besok',evidence:'not actually said'}],goal:{title:'Kontrakan Tebet',status:'tracking',evidence:'Cari'}};
+ const user={id:'latest',content:'Cari kontrakan Tebet 12 juta'};
+ const result=applyMemory(p,out,user,'renter');assert.equal(result.facts.budget.value,'24 juta/tahun');assert.equal(result.facts.location.value,'Tebet');assert.equal(result.facts.location.messageId,'latest');assert.equal(result.facts.moveIn,undefined);assert.equal(result.goal.status,'tracking');
+ assert.deepEqual(applyMemory(p,out,user,'owner'),p);assert.deepEqual(applyMemory({...p,autoSave:false},out,user,'renter'),{...p,autoSave:false});
+ const exported=exportJson({...emptyState,profile:result},{revision:1,saved:true,mode:'live'});assert.deepEqual(exported.profile,result);
+});
+test('profile persists across sessions and is injected in the same structured chat call',async()=>{
+ const user='memory-flow',s=interview('memory');s.messages.at(-1).content='Cari kontrakan Tebet';
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-memory-key',user),0).run();
+ const original=globalThis.fetch;let payload;
+ globalThis.fetch=async(url,init)=>{payload=JSON.parse(init.body);return Response.json({choices:[{message:{content:JSON.stringify({reply:'Baik, ada kebutuhan wajib?',updates:[{field:'location',value:'Tebet',evidence:'Tebet'}],goal:{title:'Mencari kontrakan Tebet',status:'tracking',evidence:'Cari kontrakan Tebet'}})},finish_reason:'stop'}]});};
+ try{const result=await (await chat(req('/api/chat',user,'POST',{sessionId:s.id,lastUserId:'m24'}))).json();assert.equal(result.state.profile.facts.location.value,'Tebet');assert.equal(payload.response_format.type,'json_schema');assert.equal((await quota(user)).count,1);
+ const next=interview('new-session');await PUT(req('/api/studio',user,'PUT',{revision:result.revision,state:{...result.state,sessions:[...result.state.sessions,next]}}));
+ await chat(req('/api/chat',user,'POST',{sessionId:next.id,lastUserId:'m24'}));assert.match(payload.messages[0].content,/PROFIL LINTAS SESI/);assert.match(payload.messages[0].content,/Tebet/);
+ }finally{globalThis.fetch=original;}
+});
+function searchPayload(withCitation=true){return {status:'completed',output:[{type:'web_search_call',status:'completed'},{type:'message',content:[{type:'output_text',text:'Sumber publik untuk diperiksa.',annotations:withCitation?[{type:'url_citation',url:'https://www.facebook.com/marketplace/item/123',title:'Kontrakan contoh sintetis'}]:[]}]}],usage:{input_tokens:20,output_tokens:10}};}
+test('search cards require actual tool completion and provider citations on allowed HTTPS domains',()=>{
+ assert.equal(metaUrl('https://facebook.com.evil.example/x'),false);assert.equal(metaUrl('javascript:alert(1)'),false);assert.equal(metaUrl('https://user:pass@facebook.com/x'),false);
+ const result=parseSearch(searchPayload());assert.equal(result.sources.length,1);assert.match(result.content,/belum diverifikasi/);
+ assert.equal(parseSearch(searchPayload(false)).sources.length,0);assert.match(parseSearch(searchPayload(false)).content,/belum ada sumber/);
+ assert.throws(()=>parseSearch({...searchPayload(),output:searchPayload().output.slice(1)}),/belum mengonfirmasi/);assert.throws(()=>parseSearch({...searchPayload(),status:'incomplete'}));
+});
+test('approved search is account-scoped, durable, idempotent and excludes private profile',async()=>{
+ const user='search-flow',s={...interview('search-session'),messages:interview().messages.slice(0,2)};const profile={...blankProfile,facts:{budget:{value:'PRIVATE_BUDGET',source:'manual',locked:true,updatedAt:'now'}}};
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s],profile}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-search-key',user),0).run();
+ const task={id:crypto.randomUUID(),sessionId:s.id,query:'kontrakan Tebet',approved:true};const original=globalThis.fetch;let calls=0,payload;
+ globalThis.fetch=async(url,init)=>{calls++;assert.equal(url,'https://api.meta.ai/v1/responses');payload=JSON.parse(init.body);return Response.json(searchPayload());};
+ try{
+ assert.equal((await search(req('/api/search',null,'POST',task))).status,401);assert.equal((await search(req('/api/search',user,'POST',{...task,approved:false}))).status,400);assert.equal(calls,0);
+ assert.equal((await search(req('/api/search',user,'POST',task,'https://evil.test'))).status,403);
+ const response=await search(req('/api/search',user,'POST',task));assert.equal(response.status,200);const out=await response.json();assert.equal(out.state.searches[0].status,'completed');assert.equal(out.state.sessions[0].messages.at(-1).sources.length,1);assert.deepEqual(out.state.profile,profile);assert.ok(!JSON.stringify(payload).includes('PRIVATE_BUDGET'));assert.equal(payload.tools[0].type,'web_search');
+ const duplicate=await (await search(req('/api/search',user,'POST',task))).json();assert.equal(duplicate.cached,true);assert.equal(calls,1);assert.equal((await search(req('/api/search',user,'POST',{...task,query:'different'}))).status,409);
+ assert.equal((await search(req('/api/search','other','POST',task))).status,400);assert.equal((await quota(user)).count,1);
+ const exported=exportJson(out.state,{revision:out.revision,saved:true,mode:'demo'});assert.equal(exported.searches[0].query,task.query);assert.equal(exported.sessions[0].messages.at(-1).sources[0].url,'https://www.facebook.com/marketplace/item/123');
+ }finally{globalThis.fetch=original;}
+});
+test('failed search retains approval and cannot silently repeat it',async()=>{
+ const user='search-fail',s={...interview('search-fail-session'),messages:interview().messages.slice(0,2)};await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-search-key',user),0).run();
+ const task={id:crypto.randomUUID(),sessionId:s.id,query:'kos Tebet',approved:true};const original=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return new Response('',{status:403});};
+ try{assert.equal((await search(req('/api/search',user,'POST',task))).status,502);const out=await (await GET(req('/api/studio',user))).json();assert.equal(out.state.searches[0].status,'failed');assert.equal(out.state.sessions[0].messages.length,2);assert.equal((await (await search(req('/api/search',user,'POST',task))).json()).cached,true);assert.equal(calls,1);}finally{globalThis.fetch=original;}
 });

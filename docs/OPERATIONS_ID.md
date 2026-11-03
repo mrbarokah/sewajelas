@@ -61,3 +61,8 @@ Validasi 10–20 percakapan nyata dengan Anda sebagai penguji; skor relevansi, k
 - https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable
 
 Web responsif dipilih untuk iterasi cepat, satu basis kode Android/iOS, dan tanpa distribusi APK. Manifest dan ikon disertakan; instalasi Home Screen/perilaku keyboard di perangkat fisik belum diuji.
+
+
+## 0.3.0 — navigasi dan model
+
+Navigasi serta keterangan ruang latihan dipindah ke menu kiri atas. Tekan lama pesan atau klik ⋯ untuk menyalin, memilih teks, dan berbagi. Pilih nama model di header → Periksa model dari API key → pilih model Standard yang tersedia dan didukung. Katalog dibaca melalui `/api/models` dari Meta; tidak menjalankan generasi AI. Pilihan tersimpan di akun, dan model dicatat pada setiap balasan baru.
