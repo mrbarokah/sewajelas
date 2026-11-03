@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.9 — 2026-11-04
+
+- Distinguish Meta incomplete, failed, and cancelled responses with safe reason-specific messages; recheck a prior failure without submitting another search.
+- Increase the output-token allowance to 4096 and use low reasoning effort for search; the actual cause of the reported failure remains unconfirmed pending live diagnostics. More generated tokens can cost more.
+
 ## 0.4.8 — 2026-11-03
 
 - Recover interrupted search approvals without mistaking an uncertain older request for a new approval. A new search still requires explicit consent; uncertain requests are retained.

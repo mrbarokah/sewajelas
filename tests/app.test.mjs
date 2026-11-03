@@ -259,3 +259,19 @@ test('a fresh chat approval is not blocked by an older uncertain legacy job',asy
  globalThis.fetch=async()=>{calls++;return Response.json({id:'resp_new_123',status:'queued'});};
  try{const task={id:crypto.randomUUID(),sessionId:session.id,query:'kontrakan Depok',approved:true,proposalId:proposal.id,approvalMessageId:approval.id};const res=await search(req('/api/search',user,'POST',task));assert.equal(res.status,200);const result=await res.json();assert.equal(calls,1);assert.equal(result.state.searches[0].status,'running');assert.equal(result.state.searches[1].providerResponseId,'resp_new_123');await search(req('/api/search',user,'POST',{...task,id:crypto.randomUUID()}));assert.equal(calls,1);}finally{globalThis.fetch=original;}
 });
+
+test('failed background search can be diagnosed without starting or changing a search',async()=>{
+ const user='diagnose-failed',jobId=crypto.randomUUID(),s=interview('diagnostic-session');
+ const job={id:jobId,sessionId:s.id,query:'kontrakan Depok',approvedAt:'2026-11-03T15:00:00Z',status:'failed',providerResponseId:'resp_diagnostic',error:'Meta tidak menyelesaikan pencarian.'};
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s],searches:[job]}}));
+ await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-diagnostic-key',user),0).run();
+ const original=globalThis.fetch;const calls=[];globalThis.fetch=async(url,init)=>{calls.push({url,method:init.method||'GET'});return Response.json({status:'incomplete',incomplete_details:{reason:'max_output_tokens'}});};
+ try{const res=await searchStatus(req('/api/search/status',user,'POST',{jobId,recheck:true}));const body=await res.json();assert.equal(res.status,200);assert.match(body.diagnostic,/batas token/);assert.equal(body.state.searches[0].status,'failed');assert.equal(calls.length,1);assert.equal(calls[0].method,'GET');assert.equal((await searchStatus(req('/api/search/status','somebody-else','POST',{jobId,recheck:true}))).status,404);}finally{globalThis.fetch=original;}
+});
+
+test('search diagnostic does not disclose untrusted provider text',async()=>{
+ const {searchFailure}=await import('../lib/search-diagnostics.ts');
+ assert.match(searchFailure({status:'incomplete',incomplete_details:{reason:'max_output_tokens'}}),/batas token/);
+ assert.match(searchFailure({status:'cancelled'}),/dibatalkan/);
+ assert.doesNotMatch(searchFailure({status:'failed',error:{code:'secret-secret',message:'private'}}),/secret|private/);
+});
