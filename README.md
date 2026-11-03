@@ -1,5 +1,9 @@
 # SewaJelas
 
+**Current application version: 0.4.2** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+
+Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
+
 **Know the trade-offs before you rent.** An Indonesian rental-assistant rehearsal studio prepared for a proposed Meta Global AI Developer Hackathon submission.
 
 SewaJelas starts from a personal problem: a cheap rental can hide unreliable water, damp rooms, extra fees and unclear repair responsibilities. The long-term product helps renters compare evidence without making landlords relist their properties.
@@ -90,20 +94,20 @@ No immunity to prompt injection, property inspection guarantee, damage forecast 
 
 No project-wide open-source license has been selected by the owner. Existing third-party notices remain in `vendor/` and `scripts/vite/`. Repository availability does not grant rights to third-party property photos or datasets.
 
-## Version 0.2.0
+## Release history: version 0.2.0
 
 Muse mode survives reload and temporary connection failures. Live requests use every stored turn in the active session (up to 80,000 characters, with an explicit overflow error). Server-side response persistence allows recovery after a lost response without repeating a completed normal request. JSON export includes all saved sessions, counts, revision history, draft, mode and sync metadata. Message actions support copy, select and device sharing where available.
 
 See [changelog](CHANGELOG.md), [handover](HANDOVER.md) and [validation](docs/VALIDATION.md). Committing to GitHub does not automatically publish to Sites; maintain both release steps. Credentials and private user transcripts must never be committed.
 
 
-## Version 0.3.0
+## Release history: version 0.3.0
 
 Chat labels now show the complete model name; user-name labels and inline copy buttons are removed. Open ⋯ or hold a message for copy/select/share. A floating upper-left drawer contains navigation and the rehearsal disclosure. Click the model header, then **Periksa model dari API key** to load compatible account models and choose Standard Muse Spark 1.1–1.3. A selection changes future replies; past replies keep their recorded model. Contributor/image/audio models are not automatically enabled.
 
-## Persistent profile and supervised discovery (0.4.0)
+## Release history: persistent profile and supervised discovery (introduced in 0.4.0)
 
-Open the floating menu → **Profil & tujuan**. A single current rental goal and nine housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and latest-user evidence-bound profile updates. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
+Open the floating menu → **Profil & tujuan**. A single current rental goal and eight housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and evidence-bound profile updates. Since 0.4.1, an explicit request to save an interview can use evidence from earlier user messages in the same session. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
 
 Press **Cari** in a renter chat, review the exact query, then approve. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
 
@@ -112,3 +116,10 @@ Profiles, goals, sources and search logs are included in JSON exports. Chat hist
 Autonomous production tasks are deferred: first implement an explicit task scope, time/budget limits, cancellation, queue, provider permissions and separate outreach approval. Search approval is not permission to contact, book or pay. Listing photos and Telegram are not shipped.
 
 Official protocol references: https://dev.meta.ai/docs/structured-output and https://dev.meta.ai/docs/search-grounding . New live structured-output/search access is not independently tested with the owner's key; route and UI tests use synthetic data.
+
+## Updates after 0.4.0
+
+- **0.4.1:** Explicit requests to save interview results can use evidence from earlier user messages in the same session. Locked fields remain protected. Live-provider behavior still needs real-account testing.
+- **0.4.2:** Removed the app's 20-attempt daily cap. Daily usage counting remains; Meta's provider limits and charges still apply.
+
+This README is maintained separately from the deployed Site. A documentation-only commit does not itself update the live app.
