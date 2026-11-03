@@ -2,7 +2,7 @@
 
 ## GitHub package verification
 
-On 3 November 2026, all 10 existing route/policy tests were rerun successfully and TypeScript passed on the unchanged application source. The sanitized export also completed a portable-profile production build. This build reused the installed dependencies through a temporary local symlink; it was not a clean dependency installation. The added GitHub Actions workflow has not run remotely. Live Meta requests, hosted account persistence, and actual browser download arrival remain unverified.
+On 3 November 2026, all 10 existing route/policy tests were rerun successfully and TypeScript passed on the unchanged application source. The sanitized export also completed a portable-profile production build. This build reused the installed dependencies through a temporary local symlink; it was not a clean dependency installation. The GitHub Actions run for source commit `37d31f989aed3cdccbc60a5cb43a07e5bbbf5bd7` subsequently passed a clean dependency install, TypeScript, all 10 tests and the production build: https://github.com/mrbarokah/sewajelas/actions/runs/41581638923 . This verifies source reproducibility in GitHub's Ubuntu runner; it does not prove live Meta behavior. Live Meta requests, hosted account persistence, and actual browser download arrival remain unverified.
 
 The build emitted a Vinext static-route classification notice; compilation completed successfully. The dependency symlink and generated output are excluded from the distribution.
 
