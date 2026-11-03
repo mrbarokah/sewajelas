@@ -4,15 +4,15 @@ export const sourceSchema=z.object({url:z.string().max(2000).refine(metaUrl),tit
 export const searchJobSchema=z.object({id:z.string().min(1).max(100),sessionId:z.string().max(100),query:z.string().min(3).max(600),approvedAt:z.string().max(40),status:z.enum(['running','completed','failed']),providerResponseId:z.string().regex(/^resp_[A-Za-z0-9_-]+$/).max(150).optional(),approvalMessageId:z.string().max(100).optional(),error:z.string().max(600).optional(),finishedAt:z.string().max(40).optional()});
 // Only provider citation annotations, never model-written URLs, become source cards.
 export function parseSearch(raw:unknown){
- const response=z.object({status:z.string(),output:z.array(z.object({type:z.string(),status:z.string().optional(),content:z.array(z.object({type:z.string(),text:z.string().optional(),annotations:z.array(z.object({type:z.string(),url:z.string().optional(),title:z.string().optional()}).passthrough()).optional()}).passthrough()).optional()}).passthrough()),usage:z.object({input_tokens:z.number().optional(),output_tokens:z.number().optional()}).optional()}).parse(raw);
+ const response=z.object({status:z.string(),output:z.array(z.object({type:z.string(),status:z.string().nullish(),content:z.array(z.object({type:z.string(),text:z.string().nullish(),annotations:z.array(z.object({type:z.string(),url:z.string().nullish(),title:z.string().nullish()}).passthrough()).nullish()}).passthrough()).nullish()}).passthrough()),usage:z.object({input_tokens:z.number().nullish(),output_tokens:z.number().nullish()}).nullish()}).parse(raw);
  if(response.status!=='completed'||!response.output.some(i=>i.type==='web_search_call'&&i.status==='completed'))throw new Error('Layanan belum mengonfirmasi pencarian selesai. Tidak ada hasil yang dianggap terverifikasi.');
  const blocks=response.output.filter(i=>i.type==='message').flatMap(i=>i.content??[]).filter(b=>b.type==='output_text');
  const sources: z.infer<typeof sourceSchema>[]=[];
  for(const b of blocks)for(const a of b.annotations??[]){if(a.type==='url_citation'&&a.url&&metaUrl(a.url)&&a.url.length<=2000&&!sources.some(s=>s.url===a.url))sources.push({url:a.url,title:(a.title||new URL(a.url).hostname).slice(0,300)});}
- if(!sources.length)return {content:'Pencarian selesai, tetapi belum ada sumber Facebook, Threads, atau Instagram publik yang dapat ditampilkan dengan sitasi. Ini bukan bukti bahwa tidak ada listing. Coba ubah lokasi atau kata kunci.',sources:[],usage:response.usage};
+ if(!sources.length)return {content:'Pencarian selesai, tetapi belum ada sumber Facebook, Threads, atau Instagram publik yang dapat ditampilkan dengan sitasi. Ini bukan bukti bahwa tidak ada listing. Coba ubah lokasi atau kata kunci.',sources:[],usage:response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined};
  const content=blocks.map(b=>b.text??'').join('\n');
  if(!content||content.length>3700)throw new Error('Ringkasan pencarian belum lengkap. Ulangi dengan kata kunci lebih spesifik.');
- return {content:'Hasil web publik · ketersediaan dan klaim listing belum diverifikasi.\n\n'+content,sources:sources.slice(0,20),usage:response.usage};
+ return {content:'Hasil web publik · ketersediaan dan klaim listing belum diverifikasi.\n\n'+content,sources:sources.slice(0,20),usage:response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined};
 }
 
 // Deliberately conservative: asking to search is distinct from merely describing needs.
@@ -22,9 +22,19 @@ export function declinesSearch(text:string){return /^(?:tidak|tidak dulu|nggak|g
 
 // Build a reviewable, minimal query from saved fields; the instruction itself is not a search keyword.
 export function buildProfileQuery(profile:{facts:Record<string,{value:string}|undefined>},instruction:string){
- const words=instruction.trim().replace(/\b(?:tolong|mohon|please|dong|sekarang|lanjut|lanjutkan|ya|iya|oke|ok)\b/gi,' ').replace(/\b(?:carikan|cariin|cari|search|telusuri|temukan)\b/gi,' ').replace(/\b(?:sesuai|berdasarkan|dari|menurut)\s+(?:dengan\s+)?(?:profil|profile|kebutuhan|tujuan)(?:\s+saya|\s+aku|\s+ku)?\b/gi,' ').replace(/\s+/g,' ').replace(/^[\s,.?!:;·-]+|[\s,.?!:;·-]+$/g,'').trim();
- const f=profile.facts;const pieces=[f.housing?.value,f.location?.value,f.budget?.value,f.costScope?.value,f.workLocation?.value?'lokasi kerja '+f.workLocation.value:undefined];
+ const f=profile.facts;
+ const words=instruction.trim()
+  .replace(/\b(?:tolong|mohon|please|dong|sekarang|lanjut|lanjutkan|ya|iya|oke|ok|udah|sudah|bisa|coba|bantu|mau|ingin)\b/gi,' ')
+  .replace(/\b(?:carikan|cariin|cari|search|telusuri|temukan)\b/gi,' ')
+  .replace(/\b(?:sesuai|berdasarkan|dari|menurut|pakai|menggunakan|mengikuti)\s+(?:dengan\s+)?(?:catatan\s+)?(?:profil|profile|kebutuhan|tujuan|kriteria|data)(?:\s+(?:dan|&|serta)\s+(?:profil|profile|kebutuhan|tujuan|kriteria|data))?(?:\s+(?:saya|aku|ku|kami|kita|di\s+atas|tersebut|tadi))?\b/gi,' ')
+  .replace(/\b(?:yang\s+(?:cocok|pas|sesuai)\s+)?(?:untuk|buat)\s+(?:saya|aku|kami|kita)\b/gi,' ')
+  .replace(/\b(?:kontrakannya|kosannya|kosnya|rumahnya|huniannya|listingnya|pilihannya|opsinya)\b/gi,' ')
+  .replace(/\s+/g,' ')
+  .replace(/^[\s,.?!:;·-]+|[\s,.?!:;·-]+$/g,'')
+  .trim();
+ const pieces=[f.housing?.value,f.location?.value,f.budget?.value,f.costScope?.value,f.workLocation?.value?'lokasi kerja '+f.workLocation.value:undefined];
  const base=pieces.filter((v):v is string=>!!v?.trim()).map(v=>v.trim());
- if(words&&!base.some(v=>v.toLowerCase().includes(words.toLowerCase())))base.push(words);
+ const genericHousingOnly=/^(?:kontrakan|kos|kost|rumah|hunian|tempat\s+tinggal|properti|listing|sewa)$/i.test(words);
+ if(words&&!(genericHousingOnly&&f.housing?.value?.trim())&&!base.some(v=>v.toLowerCase().includes(words.toLowerCase())))base.push(words);
  return base.join(' · ').slice(0,600);
 }

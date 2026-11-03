@@ -81,15 +81,30 @@ export default function Studio(){
    }
   }catch(e){setError(e instanceof Error?e.message:'Jawaban belum tersedia. Coba lagi.');}finally{setBusy(false);inputRef.current?.focus();}
  }
- type SearchResult={state:StudioState;revision:number;usage:Usage;status:string;jobId?:string};
+ type SearchResult={state:StudioState;revision:number;usage:Usage;status:string;jobId?:string;uncertain?:boolean;providerResponseId?:string|null};
  function acceptSearchState(result:SearchResult){dataRef.current=result.state;setData(result.state);revision.current=result.revision;setConnection(c=>({...c,usage:result.usage}));}
  async function pollSearch(jobId:string){
   if(polling.current)return;polling.current=true;
+  let transientErrors=0;
   try{for(let attempt=0;attempt<60;attempt++){
    await new Promise(resolve=>setTimeout(resolve,2000));
-   const result=await request<SearchResult>('/api/search/status','POST',{jobId});acceptSearchState(result);
+   let result:SearchResult;
+   try{
+    result=await request<SearchResult>('/api/search/status','POST',{jobId});
+    transientErrors=0;
+   }catch(e){
+    const msg=(e as Error).message||'';
+    if(/belum pasti|tidak ditemukan|Hubungkan kembali|Sesi masuk berakhir|Identitas pencarian/i.test(msg)||++transientErrors>=4)throw e;
+    await new Promise(resolve=>setTimeout(resolve,1500*transientErrors));
+    continue;
+   }
+   acceptSearchState(result);
    if(result.status==='completed')return;
-   if(result.status==='failed'){setError('Meta tidak menyelesaikan pencarian. Kamu dapat meminta pencarian baru di chat.');return;}
+   if(result.status==='failed'){
+    const failedJob=result.state.searches?.find(j=>j.id===jobId);
+    setError(failedJob?.error||'Meta tidak menyelesaikan pencarian. Kamu dapat meminta pencarian baru di chat.');
+    return;
+   }
   }setError('Pencarian masih diproses. Muat ulang halaman untuk memeriksa kembali; tidak ada pencarian baru yang dibuat otomatis.');
   }finally{polling.current=false;}
  }
@@ -103,10 +118,27 @@ export default function Studio(){
    await queue.current;
    const result=await request<SearchResult>('/api/search','POST',{id:uid(),sessionId:s.id,query:proposal.searchProposal!.query,approved:true,proposalId:proposal.id,approvalMessageId:approval.id});
    acceptSearchState(result);
-   if(result.status==='running'&&result.jobId)await pollSearch(result.jobId);
-   else if(result.status==='failed')setError('Pencarian sebelumnya gagal. Minta pencarian baru untuk mencoba lagi.');
+   const tracked=result.jobId?result.state.searches?.find(j=>j.id===result.jobId):undefined;
+   if(result.status==='running'&&result.jobId){
+    if(result.uncertain||!tracked?.providerResponseId){
+     setError('Pengiriman sebelumnya terputus sebelum ID diterima dari Meta. Pencarian tidak diulang otomatis; tekan “Ajukan rencana pencarian baru” di bawah jika ingin mencoba lagi.');
+    }else{
+     await pollSearch(result.jobId);
+    }
+   }else if(result.status==='failed')setError(tracked?.error||'Pencarian sebelumnya gagal. Minta pencarian baru untuk mencoba lagi.');
   }catch(e){setError((e as Error).message+' Periksa status sebelum memulai pencarian baru.');try{const recovered=await request<{state:StudioState;revision:number}>('/api/studio');dataRef.current=recovered.state;setData(recovered.state);revision.current=recovered.revision;}catch{/* keep error visible */}}
   finally{setBusy(false);inputRef.current?.focus();}
+ }
+ async function reproposeSearch(s:Session,rawQuery:string){
+  if(busy||!online)return;
+  setBusy(true);setError('');
+  try{
+   const p=dataRef.current.profile??blankProfile;
+   const cleaned=buildProfileQuery(p,rawQuery)||rawQuery;
+   const note=`Aku bisa mencari sumber hunian publik dengan kata kunci ini:\n\n${cleaned}\n\nKata kunci tersebut akan dikirim ke Meta dan penggunaan mengikuti saldo API. Hasil tidak mencakup semua listing; aku tidak akan menghubungi pemilik. Pilih apakah kamu ingin melanjutkan pencarian.`;
+   await updateSession({...s,messages:[...s.messages,{id:uid(),role:'assistant',content:note,provider:'demo',searchProposal:{query:cleaned}}]});
+  }catch(e){setError((e as Error).message);}
+  finally{setBusy(false);}
  }
 
  async function send(e?:React.FormEvent,choice?:'setuju, lanjutkan'|'batal'){
@@ -158,6 +190,10 @@ export default function Studio(){
 
  const selectedModel=data.selectedModel??DEFAULT_MODEL;
  const lastAssistant=active?.messages.filter(m=>m.role==='assistant').at(-1);const pending=active?.messages.at(-1)?.role==='user';
+ const pendingApproval=pending&&active?.messages.at(-2)?.searchProposal&&approvesSearch(active.messages.at(-1)!.content)?active.messages.at(-1):undefined;
+ const pendingProposal=pendingApproval?active?.messages.at(-2):undefined;
+ const pendingJob=pendingApproval?data.searches?.find(j=>j.approvalMessageId===pendingApproval.id):undefined;
+ const needsNewProposal=!!pendingJob&&(pendingJob.status==='failed'||(pendingJob.status==='running'&&!pendingJob.providerResponseId));
  return <div className="app-shell">
 
   <main className="main"><header className="topbar"><button className="menu-trigger" aria-label="Buka menu navigasi" aria-haspopup="dialog" aria-expanded={drawer} onClick={()=>setDrawer(true)}><Menu size={22}/></button><button className={'mode-pill '+(mode==='live'?'is-live':'')} aria-label="Pilih model dan koneksi" onClick={()=>setSettings(true)}><span className="status-dot"/>{!ready?'Memeriksa…':mode==='live'?modelLabel(selectedModel):'Simulasi'}<ChevronDown size={14}/></button><div className="top-actions"><span className="save-state">{saving?'Menyimpan…':saveFailed?'Belum tersimpan':online?<><CheckCheck size={13}/> Tersimpan</>:'Akun belum termuat'}</span>{view==='chat'&&active&&<button className="icon-button" title="Ringkasan percakapan" aria-label="Buka ringkasan" onClick={()=>setSummary(true)}><FileText size={19}/></button>}</div></header>
@@ -168,7 +204,7 @@ export default function Studio(){
   {mode==='live'&&(!connectionChecked||!connection.connected)&&<div className="recovery-banner"><span>Muse belum tersambung. Mode tetap Muse.</span><button onClick={()=>void refreshConnection()}>Periksa koneksi</button><button onClick={()=>setSettings(true)}>Pengaturan</button></div>}
   {view==='chat'&&<div className="conversation-area">
   <div className={'chat-scroll '+(!active?'welcome-scroll':'')} ref={chatRef}>
-   {!active?<section className="welcome"><div className="eyebrow"><span/> CARI NYAMAN, MULAI DARI OBROLAN</div><DoorDrawing/><h1>Tempat yang cocok.<br/><em>Percakapan yang nyaman.</em></h1><p>Latih asistenmu memahami kebutuhan hunian.<br className="desktop-break"/> Coba ngobrol, koreksi jawabannya, temukan gaya yang pas.</p><div className="scenario-grid"><button className="scenario-item main-scenario" onClick={()=>{const s=newSession();if(s)inputRef.current?.focus();}}><span className="scenario-number">01</span><span><strong>Saya calon penyewa</strong><small>Mulai dari kebutuhanmu</small></span><ArrowUpRight size={19}/></button><button className="scenario-item" onClick={()=>newSession('water')}><span className="scenario-number">02</span><span><strong>Saya coba jadi pemilik</strong><small>Latihan bertanya soal air</small></span><ArrowUpRight size={19}/></button></div><div className="try-another">Skenario lain: <button onClick={()=>newSession('cost')}>biaya tambahan</button><span>·</span><button onClick={()=>newSession('hesitant')}>pemilik keberatan</button></div></section>:<div className="chat-content"><div className="session-heading"><span className="eyebrow">{active.role==='renter'?'KAMU SEBAGAI CALON PENYEWA':'KAMU MEMERANKAN PEMILIK'}</span><h1>{active.scenario==='intro'?'Kita mulai dari kebutuhanmu.':scenarios[active.scenario].title}</h1><p>{active.role==='renter'?'Kebutuhan dari chat Muse tersimpan di Profil & tujuan. Kamu bisa memeriksa dan mengubahnya.':'Jawab seperti pemilik sungguhan. Asisten mewakili calon penyewa fiktif.'}</p></div><div className="messages" role="log" aria-label="Percakapan latihan">{active.messages.map((m,i)=><article key={m.id} className={'message '+m.role}>{m.role==='assistant'&&<div className="message-meta">{m.searchProposal?'Rencana pencarian':m.provider==='live'?modelLabel(m.model??DEFAULT_MODEL):i===0?'Pembuka latihan':'Simulasi'}</div>}<MessageBody text={m.searchProposal?m.content.replace('Balas “ya” untuk mencari, atau tulis “batal”.','Pilih apakah kamu ingin melanjutkan pencarian.'):m.content} onOpen={()=>setMessageMenu(m.id)}/>{m.searchProposal&&active.messages.at(-1)?.id===m.id&&<div className="search-decisions" aria-label="Persetujuan pencarian"><button className="primary-button" disabled={busy||!online} onClick={()=>{if(choiceLock.current)return;choiceLock.current=true;void send(undefined,'setuju, lanjutkan').finally(()=>{choiceLock.current=false;});}}>Setuju, lanjutkan</button><button className="secondary-button" disabled={busy||!online} onClick={()=>{if(choiceLock.current)return;choiceLock.current=true;void send(undefined,'batal').finally(()=>{choiceLock.current=false;});}}>Batal</button></div>}{m.sources&&<div className="source-list">{m.sources.map((source,index)=><a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer"><span>{index+1}</span><div><strong>{source.title}</strong><small>{new URL(source.url).hostname}</small></div><ArrowUpRight size={16}/></a>)}</div>}{m.original&&<details className="original"><summary>Lihat jawaban sebelumnya</summary><p>{m.original}</p></details>}<div className="message-tools"><MessageActions text={m.content} notify={setToast} open={messageMenu===m.id} onOpen={()=>setMessageMenu(m.id)} onClose={()=>setMessageMenu(null)}/>{m.role==='assistant'&&i>0&&!m.searchId&&!m.searchProposal&&<><button disabled={busy} onClick={()=>openCorrection(m)}><Pencil size={13}/> Perbaiki gaya</button>{lastAssistant?.id===m.id&&!pending&&!m.searchId&&<button disabled={busy} aria-label="Coba jawaban lagi" onClick={()=>answer(active,m.id)}><RotateCcw size={13}/></button>}</>}</div></article>)}{busy&&<div className="thinking" role="status"><span/><span/><span/>{mode==='live'?'Muse sedang merespons':'Menyiapkan balasan contoh'}</div>}</div>{pending&&!busy&&<button className="retry-button" onClick={()=>{const approval=active.messages.at(-1),proposal=active.messages.at(-2);if(approval&&proposal?.searchProposal&&approvesSearch(approval.content))void executeChatSearch(active,proposal,approval);else void answer(active);}}><RotateCcw size={15}/> Coba balas pesan terakhir</button>}<div ref={endRef}/></div>}
+   {!active?<section className="welcome"><div className="eyebrow"><span/> CARI NYAMAN, MULAI DARI OBROLAN</div><DoorDrawing/><h1>Tempat yang cocok.<br/><em>Percakapan yang nyaman.</em></h1><p>Latih asistenmu memahami kebutuhan hunian.<br className="desktop-break"/> Coba ngobrol, koreksi jawabannya, temukan gaya yang pas.</p><div className="scenario-grid"><button className="scenario-item main-scenario" onClick={()=>{const s=newSession();if(s)inputRef.current?.focus();}}><span className="scenario-number">01</span><span><strong>Saya calon penyewa</strong><small>Mulai dari kebutuhanmu</small></span><ArrowUpRight size={19}/></button><button className="scenario-item" onClick={()=>newSession('water')}><span className="scenario-number">02</span><span><strong>Saya coba jadi pemilik</strong><small>Latihan bertanya soal air</small></span><ArrowUpRight size={19}/></button></div><div className="try-another">Skenario lain: <button onClick={()=>newSession('cost')}>biaya tambahan</button><span>·</span><button onClick={()=>newSession('hesitant')}>pemilik keberatan</button></div></section>:<div className="chat-content"><div className="session-heading"><span className="eyebrow">{active.role==='renter'?'KAMU SEBAGAI CALON PENYEWA':'KAMU MEMERANKAN PEMILIK'}</span><h1>{active.scenario==='intro'?'Kita mulai dari kebutuhanmu.':scenarios[active.scenario].title}</h1><p>{active.role==='renter'?'Kebutuhan dari chat Muse tersimpan di Profil & tujuan. Kamu bisa memeriksa dan mengubahnya.':'Jawab seperti pemilik sungguhan. Asisten mewakili calon penyewa fiktif.'}</p></div><div className="messages" role="log" aria-label="Percakapan latihan">{active.messages.map((m,i)=><article key={m.id} className={'message '+m.role}>{m.role==='assistant'&&<div className="message-meta">{m.searchProposal?'Rencana pencarian':m.provider==='live'?modelLabel(m.model??DEFAULT_MODEL):i===0?'Pembuka latihan':'Simulasi'}</div>}<MessageBody text={m.searchProposal?m.content.replace('Balas “ya” untuk mencari, atau tulis “batal”.','Pilih apakah kamu ingin melanjutkan pencarian.'):m.content} onOpen={()=>setMessageMenu(m.id)}/>{m.searchProposal&&active.messages.at(-1)?.id===m.id&&<div className="search-decisions" aria-label="Persetujuan pencarian"><button className="primary-button" disabled={busy||!online} onClick={()=>{if(choiceLock.current)return;choiceLock.current=true;void send(undefined,'setuju, lanjutkan').finally(()=>{choiceLock.current=false;});}}>Setuju, lanjutkan</button><button className="secondary-button" disabled={busy||!online} onClick={()=>{if(choiceLock.current)return;choiceLock.current=true;void send(undefined,'batal').finally(()=>{choiceLock.current=false;});}}>Batal</button></div>}{m.sources&&<div className="source-list">{m.sources.map((source,index)=><a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer"><span>{index+1}</span><div><strong>{source.title}</strong><small>{new URL(source.url).hostname}</small></div><ArrowUpRight size={16}/></a>)}</div>}{m.original&&<details className="original"><summary>Lihat jawaban sebelumnya</summary><p>{m.original}</p></details>}<div className="message-tools"><MessageActions text={m.content} notify={setToast} open={messageMenu===m.id} onOpen={()=>setMessageMenu(m.id)} onClose={()=>setMessageMenu(null)}/>{m.role==='assistant'&&i>0&&!m.searchId&&!m.searchProposal&&<><button disabled={busy} onClick={()=>openCorrection(m)}><Pencil size={13}/> Perbaiki gaya</button>{lastAssistant?.id===m.id&&!pending&&!m.searchId&&<button disabled={busy} aria-label="Coba jawaban lagi" onClick={()=>answer(active,m.id)}><RotateCcw size={13}/></button>}</>}</div></article>)}{busy&&<div className="thinking" role="status"><span/><span/><span/>{mode==='live'?'Muse sedang merespons':'Menyiapkan balasan contoh'}</div>}</div>{pending&&!busy&&<button className="retry-button" onClick={()=>{if(needsNewProposal&&pendingProposal?.searchProposal){void reproposeSearch(active,pendingProposal.searchProposal.query);return;}const approval=active.messages.at(-1),proposal=active.messages.at(-2);if(approval&&proposal?.searchProposal&&approvesSearch(approval.content))void executeChatSearch(active,proposal,approval);else void answer(active);}}><RotateCcw size={15}/> {needsNewProposal?'Ajukan rencana pencarian baru':pendingApproval?'Periksa status pencarian':'Coba balas pesan terakhir'}</button>}<div ref={endRef}/></div>}
   </div>
   <div className="composer-wrap"><form className="composer" onSubmit={send}><textarea ref={inputRef} value={draft} maxLength={4000} rows={1} aria-label="Pesan untuk SewaJelas" placeholder={active?.role==='owner'?'Balas sebagai pemilik…':'Tulis pesan…'} onChange={e=>{setDraft(e.target.value);e.target.style.height='auto';e.target.style.height=Math.min(e.target.scrollHeight,144)+'px';}} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing&&window.innerWidth>700){e.preventDefault();void send();}}} disabled={busy||!online}/><button className="send-button" type="submit" aria-label="Kirim pesan" disabled={!draft.trim()||busy||!online}>{busy?<LoaderCircle className="spin" size={20}/>:<ArrowUp size={21}/>}</button></form></div>
   </div>}

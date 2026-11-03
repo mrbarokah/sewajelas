@@ -240,3 +240,22 @@ test('profile-based search excludes generic request and includes workplace expli
  const query=buildProfileQuery(profile,'Carikan kontrakan sesuai profil saya');assert.match(query,/Pancoran Jakarta Selatan/);assert.match(query,/Depok UI/);assert.doesNotMatch(query,/carikan|sesuai profil/i);
  assert.match(buildProfileQuery(profile,'Carikan kos Tebet'),/kos Tebet/);
 });
+
+test('nullable Meta fields do not bypass completed tool and citation requirements',()=>{
+ const result=parseSearch({status:'completed',output:[{type:'reasoning',status:null,content:null},{type:'web_search_call',status:'completed',results:[{url:'https://www.facebook.com/uncited'}]},{type:'message',content:[{type:'output_text',text:'Hasil',annotations:null}]}],usage:{input_tokens:null,output_tokens:20}});
+ assert.equal(result.sources.length,0);assert.equal(result.usage.output_tokens,20);
+ assert.throws(()=>parseSearch({status:'completed',output:[{type:'web_search_call',status:null}]}));
+});
+
+test('a fresh chat approval is not blocked by an older uncertain legacy job',async()=>{
+ const user='fresh-approval-after-uncertain';
+ const proposal={id:'new-proposal',role:'assistant',content:'Rencana',provider:'demo',searchProposal:{query:'kontrakan Depok'}};
+ const approval={id:'new-approval',role:'user',content:'setuju, lanjutkan'};
+ const session={...interview('fresh-session'),messages:[{id:'u0',role:'user',content:'Cari'},proposal,approval]};
+ const orphan={id:crypto.randomUUID(),sessionId:session.id,query:'kontrakan Depok',approvedAt:'2026-11-03T15:00:00Z',status:'running'};
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[session],searches:[orphan]}}));
+ await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-key',user),0).run();
+ const original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async()=>{calls++;return Response.json({id:'resp_new_123',status:'queued'});};
+ try{const task={id:crypto.randomUUID(),sessionId:session.id,query:'kontrakan Depok',approved:true,proposalId:proposal.id,approvalMessageId:approval.id};const res=await search(req('/api/search',user,'POST',task));assert.equal(res.status,200);const result=await res.json();assert.equal(calls,1);assert.equal(result.state.searches[0].status,'running');assert.equal(result.state.searches[1].providerResponseId,'resp_new_123');await search(req('/api/search',user,'POST',{...task,id:crypto.randomUUID()}));assert.equal(calls,1);}finally{globalThis.fetch=original;}
+});

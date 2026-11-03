@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.8 — 2026-11-03
+
+- Recover interrupted search approvals without mistaking an uncertain older request for a new approval. A new search still requires explicit consent; uncertain requests are retained.
+- Accept nullable optional provider response fields and refine natural-language search queries. Source cards still require provider citations.
+- Search failures remain under investigation; live Meta search has not been independently verified with the user's key.
+
 ## 0.4.7 — 2026-11-03
 
 - Construct reviewable search keywords from profile fields without appending generic user instructions, retaining additional user-specified terms.

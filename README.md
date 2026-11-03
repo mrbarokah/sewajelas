@@ -1,6 +1,9 @@
 # SewaJelas
 
-**Current application version: 0.4.7** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.4.8** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+
+
+Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
