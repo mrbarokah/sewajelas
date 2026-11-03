@@ -1,7 +1,7 @@
 import { z } from 'zod';
 export function metaUrl(value:string){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&['facebook.com','instagram.com','threads.net','threads.com'].some(h=>u.hostname===h||u.hostname.endsWith('.'+h));}catch{return false;}}
 export const sourceSchema=z.object({url:z.string().max(2000).refine(metaUrl),title:z.string().max(300)});
-export const searchJobSchema=z.object({id:z.string().min(1).max(100),sessionId:z.string().max(100),query:z.string().min(3).max(600),approvedAt:z.string().max(40),status:z.enum(['running','completed','failed']),error:z.string().max(600).optional(),finishedAt:z.string().max(40).optional()});
+export const searchJobSchema=z.object({id:z.string().min(1).max(100),sessionId:z.string().max(100),query:z.string().min(3).max(600),approvedAt:z.string().max(40),status:z.enum(['running','completed','failed']),providerResponseId:z.string().regex(/^resp_[A-Za-z0-9_-]+$/).max(150).optional(),approvalMessageId:z.string().max(100).optional(),error:z.string().max(600).optional(),finishedAt:z.string().max(40).optional()});
 // Only provider citation annotations, never model-written URLs, become source cards.
 export function parseSearch(raw:unknown){
  const response=z.object({status:z.string(),output:z.array(z.object({type:z.string(),status:z.string().optional(),content:z.array(z.object({type:z.string(),text:z.string().optional(),annotations:z.array(z.object({type:z.string(),url:z.string().optional(),title:z.string().optional()}).passthrough()).optional()}).passthrough()).optional()}).passthrough()),usage:z.object({input_tokens:z.number().optional(),output_tokens:z.number().optional()}).optional()}).parse(raw);

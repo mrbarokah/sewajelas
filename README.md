@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.4.5** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.4.6** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
@@ -17,7 +17,7 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
 - Server-side provider requests, encrypted account-scoped credentials and daily usage accounting without an application-imposed daily cap; provider rates and limits still apply.
-- Twenty-seven automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Thirty automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
 **Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
@@ -129,3 +129,5 @@ This README is maintained separately from the deployed Site. A documentation-onl
 - **0.4.4:** Search requests, query review, consent and results are handled within the same chat. Intent recognition is rule-based and live-provider search remains to be verified.
 
 - **0.4.5:** Search approval and cancellation buttons appear inside the conversation; decisions remain subject to server-side checks.
+
+- **0.4.6:** Approved searches use background responses with recoverable status polling. Usage settings show locally recorded daily tokens and provider rate-limit headers when present; these do not show remaining credit. Live-provider testing remains necessary.

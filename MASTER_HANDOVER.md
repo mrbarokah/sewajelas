@@ -1,6 +1,6 @@
 # SewaJelas — handover untuk agen pengembang
 
-Pembaruan 3 November 2026. Versi aplikasi 0.4.5; periksa `main` dan riwayat terkini sebelum bekerja karena dokumen ini bisa tertinggal. Repositori privat: https://github.com/mrbarokah/sewajelas . Situs: https://sewajelas-ruang-latihan.tamecreek.chatgpt.site .
+Pembaruan 3 November 2026. Versi aplikasi 0.4.6; periksa `main` dan riwayat terkini sebelum bekerja karena dokumen ini bisa tertinggal. Repositori privat: https://github.com/mrbarokah/sewajelas . Situs: https://sewajelas-ruang-latihan.tamecreek.chatgpt.site .
 
 ## Instruksi siap tempel untuk agen mana pun
 
@@ -16,6 +16,7 @@ Asisten hunian Indonesia yang membantu calon penyewa merumuskan kebutuhan dan me
 - 0.2: pemulihan mode dan konteks sesi, jawaban tersimpan sebelum dikirim, ekspor semua sesi, aksi pesan.
 - 0.3: menu hamburger, nama dan pemilihan model, tekan lama/ellipsis.
 - 0.4: profil lintas sesi, satu tujuan, pencarian web bersitasi dengan persetujuan dan log.
+- 0.4.6: pencarian background dengan pemulihan ID dan status; usage token lokal serta batas per menit jika header Meta tersedia. Saldo kredit belum tersedia.
 - 0.4.5: pilihan Setuju, lanjutkan dan Batal pada pesan pencarian; keputusan tersimpan di chat dan tetap diperiksa server.
 - 0.4.4: permintaan, persetujuan, dan hasil pencarian dalam satu kolom chat; model pencarian langsung tetap perlu diuji dengan API nyata.
 - 0.4.3: penanganan format respons profil lebih tangguh dan status penyimpanan diperiksa dari perubahan nyata; uji langsung Muse masih diperlukan.

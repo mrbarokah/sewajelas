@@ -49,7 +49,7 @@ export async function POST(req:Request){try{
   const state={...snapshot.state,...(memory?{profile:nextProfile}:{}),sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
   // Save before returning: a disconnected browser can recover this reply on reload.
   const revision=await writeState(user,snapshot.revision,state);
-  return json({content:answer.content,provider:'live',state,revision,usage:await quota(user)});
+  return json({content:answer.content,provider:'live',state,revision,usage:await quota(user),rate:answer.rate});
  }
- return json({content:answer.content,provider:'live',usage:await quota(user)});
+ return json({content:answer.content,provider:'live',usage:await quota(user),rate:answer.rate});
 }catch(e){return failure(e);}}

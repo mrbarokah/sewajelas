@@ -207,3 +207,28 @@ test('chat search requires last user approval and matching saved proposal before
  const result=await search(req('/api/search',user,'POST',task));assert.equal(result.status,200);const json=await result.json();assert.equal(json.state.sessions[0].messages.at(-1).searchId,task.id);assert.equal(calls,1);
  }finally{globalThis.fetch=original;}
 });
+
+import { POST as searchStatus } from '../app/api/search/status/route.ts';
+import { readRateHeaders } from '../lib/server.ts';
+test('background search survives disconnect, resumes by stored provider id and cannot double-charge on duplicate',async()=>{
+ const user='background-search',s={...interview('background'),messages:interview().messages.slice(0,2)};
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-search-key',user),0).run();
+ const task={id:crypto.randomUUID(),sessionId:s.id,query:'kos Tebet',approved:true};const original=globalThis.fetch;let post=0,get=0;
+ globalThis.fetch=async(url,init)=>{if(init.method==='POST'){post++;const payload=JSON.parse(init.body);assert.equal(payload.background,true);return Response.json({id:'resp_fake123',status:'queued'});}get++;assert.equal(url,'https://api.meta.ai/v1/responses/resp_fake123');return Response.json(get===1?{status:'in_progress'}:searchPayload());};
+ try{const first=await (await search(req('/api/search',user,'POST',task))).json();assert.equal(first.status,'running');assert.equal(first.state.searches[0].providerResponseId,'resp_fake123');
+  const repeat=await (await search(req('/api/search',user,'POST',task))).json();assert.equal(repeat.cached,true);assert.equal(post,1);
+  assert.equal((await searchStatus(req('/api/search/status','different','POST',{jobId:task.id}))).status,404);
+  assert.equal((await (await searchStatus(req('/api/search/status',user,'POST',{jobId:task.id}))).json()).status,'running');
+  const done=await (await searchStatus(req('/api/search/status',user,'POST',{jobId:task.id}))).json();assert.equal(done.status,'completed');assert.equal(done.state.sessions[0].messages.at(-1).searchId,task.id);
+  const again=await (await searchStatus(req('/api/search/status',user,'POST',{jobId:task.id}))).json();assert.equal(again.state.sessions[0].messages.filter(m=>m.searchId===task.id).length,1);assert.equal(post,1);assert.equal(get,2);
+ }finally{globalThis.fetch=original;}
+});
+test('uncertain search submission is not automatically repeated or reported as failed',async()=>{
+ const user='unknown-search',s={...interview('unknown'),messages:interview().messages.slice(0,2)};await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-key',user),0).run();
+ const task={id:crypto.randomUUID(),sessionId:s.id,query:'kos Depok',approved:true};const original=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw new Error('network failed');};
+ try{assert.equal((await search(req('/api/search',user,'POST',task))).status,502);const state=await (await GET(req('/api/studio',user))).json();assert.equal(state.state.searches[0].status,'running');assert.equal(state.state.searches[0].providerResponseId,undefined);assert.equal((await (await search(req('/api/search',user,'POST',task))).json()).cached,true);assert.equal(calls,1);assert.equal((await searchStatus(req('/api/search/status',user,'POST',{jobId:task.id}))).status,409);}finally{globalThis.fetch=original;}
+});
+test('provider rate headers are optional window data, never a fabricated credit balance',()=>{
+ assert.equal(readRateHeaders(new Headers()),null);assert.equal(readRateHeaders(new Headers({'x-ratelimit-limit-tokens':'100','x-ratelimit-remaining-tokens':'101'})),null);
+ const rate=readRateHeaders(new Headers({'x-ratelimit-limit-tokens':'1000','x-ratelimit-remaining-tokens':'900'}));assert.equal(rate.limit,1000);assert.equal(rate.remaining,900);assert.ok(!('balance' in rate));
+});

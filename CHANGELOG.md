@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.6 — 2026-11-03
+
+- Submit approved search to Meta Responses in background, persist its response ID and poll via short authenticated requests. Recover known running jobs after reload and prevent repeat submissions for the same approval. Unknown submission state is not silently retried.
+- Show daily recorded input/output token use and optional current per-minute team/model token limit from response headers. Remaining credit is not inferred.
+- Add synthetic tests for recovery, account isolation, idempotency, uncertain submissions and rate headers. Live Meta search remains unverified.
+
 ## 0.4.5 — 2026-11-03
 
 - Add Setuju, lanjutkan and Batal buttons to the chat search proposal. Record the selection as a chat message and require the existing server-side approval check before searching.
