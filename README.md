@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.4.3** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.4.4** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
@@ -17,7 +17,7 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
 - Server-side provider requests, encrypted account-scoped credentials and daily usage accounting without an application-imposed daily cap; provider rates and limits still apply.
-- Twenty-five automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Twenty-seven automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
 **Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
@@ -109,7 +109,7 @@ Chat labels now show the complete model name; user-name labels and inline copy b
 
 Open the floating menu → **Profil & tujuan**. A single current rental goal and eight housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and evidence-bound profile updates. Since 0.4.1, an explicit request to save an interview can use evidence from earlier user messages in the same session. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
 
-Press **Cari** in a renter chat, review the exact query, then approve. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
+In a renter chat, ask to search, review the exact query in the conversation, then type **ya** to approve or **batal** to cancel. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
 
 Profiles, goals, sources and search logs are included in JSON exports. Chat history and encrypted credentials remain account scoped. Maximum 30 retained search jobs; no automatic retry of an approval ID. A running job after an interrupted process is unconfirmed and must not be presented as completed.
 
@@ -125,3 +125,5 @@ Official protocol references: https://dev.meta.ai/docs/structured-output and htt
 This README is maintained separately from the deployed Site. A documentation-only commit does not itself update the live app.
 
 - **0.4.3:** More resilient handling for structured profile replies and honest confirmation of saved changes. Real-key verification remains pending.
+
+- **0.4.4:** Search requests, query review, consent and results are handled within the same chat. Intent recognition is rule-based and live-provider search remains to be verified.

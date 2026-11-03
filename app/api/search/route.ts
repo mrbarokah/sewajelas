@@ -1,15 +1,18 @@
 import { z } from 'zod';
 import { DEFAULT_MODEL } from '@/lib/models';
-import { parseSearch } from '@/lib/search';
+import { parseSearch,approvesSearch } from '@/lib/search';
 import { MAX_MESSAGES,type Message } from '@/lib/studio';
 import { body,failure,identity,json,sameOrigin,ApiError,getKey,readState,writeState,reserve,addUsage,quota } from '@/lib/server';
-const input=z.object({id:z.string().uuid(),sessionId:z.string().min(1).max(100),query:z.string().trim().min(3).max(600),approved:z.literal(true)});
+const input=z.object({id:z.string().uuid(),sessionId:z.string().min(1).max(100),query:z.string().trim().min(3).max(600),approved:z.literal(true),proposalId:z.string().max(100).optional(),approvalMessageId:z.string().max(100).optional()});
 export async function POST(req:Request){try{
  sameOrigin(req);const user=identity(req);const parsed=input.safeParse(await body(req,10000));if(!parsed.success)throw new ApiError(400,'Tinjau kata kunci dan setujui pencarian dahulu.');const task=parsed.data;
  const snapshot=await readState(user);const previous=snapshot.state.searches?.find(j=>j.id===task.id);
  if(previous){if(previous.sessionId!==task.sessionId||previous.query!==task.query)throw new ApiError(409,'Persetujuan ini sudah digunakan untuk pencarian berbeda.');return json({state:snapshot.state,revision:snapshot.revision,cached:true,status:previous.status,usage:await quota(user)});}
  const session=snapshot.state.sessions.find(s=>s.id===task.sessionId);if(!session||session.role!=='renter')throw new ApiError(400,'Buka percakapan calon penyewa untuk mencari.');
- if(session.messages.at(-1)?.role==='user')throw new ApiError(409,'Selesaikan balasan yang tertunda sebelum mencari.');
+ if(task.proposalId||task.approvalMessageId){
+  const approval=session.messages.at(-1),proposal=session.messages.at(-2);
+  if(!approval||approval.role!=='user'||approval.id!==task.approvalMessageId||!approvesSearch(approval.content)||!proposal||proposal.role!=='assistant'||proposal.id!==task.proposalId||proposal.searchProposal?.query!==task.query)throw new ApiError(409,'Persetujuan pencarian tidak cocok dengan pesan terakhir. Tinjau kembali kata kuncinya.');
+ }else if(session.messages.at(-1)?.role==='user')throw new ApiError(409,'Selesaikan balasan yang tertunda sebelum mencari.');
  if(session.messages.length>=MAX_MESSAGES)throw new ApiError(400,'Sesi penuh. Mulai sesi baru.');
  if((snapshot.state.searches?.length??0)>=30)throw new ApiError(400,'Batas 30 pencarian tersimpan tercapai untuk MVP ini.');
  const key=await getKey(user);if(!key)throw new ApiError(409,'Pencarian nyata membutuhkan kunci Meta meskipun chat memakai simulasi.');

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.4 — 2026-11-03
+
+- Move supervised public-web search into the existing conversation: user requests search, reviews the exact query in chat, and types yes or cancel. No search runs before explicit consent.
+- Persist proposed query and require matching final approval in account-scoped session state; keep search audit, source validation and existing account boundaries.
+- Remove the separate search button and fix the outdated assistant prompt. Automated tests use a mock provider; live search still needs verification.
+
 ## 0.4.3 — 2026-11-03
 
 - Accept fenced JSON and independently validate profile updates when optional fields are absent or malformed, while retaining evidence checks and manual locks.

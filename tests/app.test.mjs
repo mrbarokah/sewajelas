@@ -190,3 +190,20 @@ test('explicit save uses earlier user evidence and reports actual profile update
  const bad=await (await chat(req('/api/chat',user,'POST',{sessionId:'other',lastUserId:'m24'}))).json();assert.match(bad.content,/Belum ada perubahan/);assert.equal(bad.state.profile.facts.location.value,'Depok');
  }finally{globalThis.fetch=original;}
 });
+
+test('search intent and consent are distinct, conservative and Indonesian-friendly',async()=>{
+ const {wantsSearch,approvesSearch,declinesSearch}=await import('../lib/search.ts');
+ assert.equal(wantsSearch('Oke sekarang udah bisa lanjut carikan kontrakannya?'),true);
+ assert.equal(wantsSearch('Saya mencari kontrakan di Depok'),false);
+ assert.equal(wantsSearch('Jangan cari kontrakan dulu'),false);
+ assert.equal(approvesSearch('Ya'),true);assert.equal(approvesSearch('ya tapi jangan cari'),false);assert.equal(declinesSearch('batal'),true);
+});
+test('chat search requires last user approval and matching saved proposal before network call',async()=>{
+ const user='chat-search-approval';const proposal={id:'proposal',role:'assistant',content:'Kata kunci: kos Tebet. Balas ya untuk mencari.',provider:'demo',searchProposal:{query:'kos Tebet'}};const approval={id:'approval',role:'user',content:'ya'};
+ const session={...interview('chat-search'),messages:[{id:'start',role:'user',content:'Carikan kos Tebet'},proposal,approval]};
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[session]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('fake-search-key',user),0).run();
+ const task={id:crypto.randomUUID(),sessionId:session.id,query:'kos Tebet',approved:true,proposalId:'proposal',approvalMessageId:'approval'};const original=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json(searchPayload());};
+ try{assert.equal((await search(req('/api/search',user,'POST',{...task,query:'other query'}))).status,409);assert.equal((await search(req('/api/search',user,'POST',{...task,approvalMessageId:'wrong'}))).status,409);assert.equal(calls,0);
+ const result=await search(req('/api/search',user,'POST',task));assert.equal(result.status,200);const json=await result.json();assert.equal(json.state.sessions[0].messages.at(-1).searchId,task.id);assert.equal(calls,1);
+ }finally{globalThis.fetch=original;}
+});
