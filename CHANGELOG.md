@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 — 2026-11-03
+
+- Remove the application-imposed 20 daily attempt cap while retaining daily usage accounting. Provider limits and costs remain applicable.
+- Update settings, handover and the regression test for more than 20 attempts.
+
 ## 0.4.1 — 2026-11-03
 
 - Allow explicit requests to save a completed renter interview to use evidence from earlier user messages in the same session, while keeping manual locks and excluding assistant messages.

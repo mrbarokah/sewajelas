@@ -12,8 +12,8 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Explicit free pattern-based simulation and a separate Muse Spark API mode.
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
-- Server-side provider requests, encrypted account-scoped credentials and a cap of 20 attempted API calls per user per day, resetting at midnight WIB.
-- Twenty-two automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Server-side provider requests, encrypted account-scoped credentials and daily usage accounting without an application-imposed daily cap; provider rates and limits still apply.
+- Twenty-three automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
 **Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
@@ -41,7 +41,7 @@ flowchart TD
     UI[Responsive chat] --> Mode{Selected mode}
     Mode -->|Simulation| Demo[Local pattern engine]
     Mode -->|Muse| Gateway[Authenticated API routes]
-    Gateway --> Policy[Validation and quota]
+    Gateway --> Policy[Validation and usage accounting]
     Policy --> Meta[Meta Model API]
     Gateway --> DB[(D1 account state)]
     Policy --> Vault[Encrypted credential]

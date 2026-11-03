@@ -1,6 +1,6 @@
 # SewaJelas handover
 
-Current application version: **0.4.1**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
+Current application version: **0.4.2**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
 
 ## Product and constraints
 
@@ -40,3 +40,5 @@ A failed response before server persistence may still need retry. Simultaneous l
 `lib/search.ts` validates completed built-in search calls and HTTPS Meta-domain citation cards. `/api/search` claims an approved UUID with state CAS before billing; duplicate IDs never run twice. It sends only the approved query, not private profile/history. Success appends the reply to the latest state; failed or interrupted calls need explicit new approval. No autonomous runner, direct Marketplace access, scraping, photos, outreach or payments. Provider web_search may internally issue several queries; do not promise a single billable tool call. 30 retained jobs is a current cap.
 
 Preserve optional profile/searches/sources/searchId fields when editing state. Never publish QA harness routes. For future task autonomy implement bounded authorization, cancellation, queues and separate social OAuth permissions before enabling actions.
+
+0.4.2 removes the application daily attempt cap while retaining per-account daily usage counts. Provider-side limits and charges still apply.
