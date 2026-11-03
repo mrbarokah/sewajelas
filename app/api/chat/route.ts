@@ -1,4 +1,4 @@
-import { blankProfile,memoryPrompt,memoryFormat,memoryReplySchema,applyMemory } from '@/lib/profile';
+import { blankProfile,memoryPrompt,memoryFormat,memoryReplySchema,parseMemoryReply,isProfileSaveRequest,applyMemory } from '@/lib/profile';
 import { DEFAULT_MODEL } from '@/lib/models';
 import { z } from 'zod';
 import { messageSchema,makePrompt,compactHistory,replaceReply,MAX_MESSAGES,type Message } from '@/lib/studio';
@@ -35,12 +35,18 @@ export async function POST(req:Request){try{
  const profile=snapshot.state.profile??blankProfile;
  const answer=await metaCall(key,[{role:'developer',content:makePrompt(role,scenario,snapshot.state.lessons)+(useMemory?memoryPrompt(profile):'')},...history],2048,snapshot.state.selectedModel??DEFAULT_MODEL,useMemory?memoryFormat:undefined);
  let memory:ReturnType<typeof memoryReplySchema.parse>|undefined;
- if(useMemory){try{memory=memoryReplySchema.parse(JSON.parse(answer.content));answer.content=memory.reply;}catch{throw new ApiError(502,'Muse mengirim format ingatan yang belum valid. Pesanmu tetap tersimpan; coba lagi.');}}
+ if(useMemory){memory=parseMemoryReply(answer.content)??undefined;if(!memory)throw new ApiError(502,'Respons Muse tidak dapat dibaca, jadi profil belum diubah. Pesanmu tetap tersimpan. Coba balas pesan terakhir lagi.');answer.content=memory.reply;}
  await addUsage(user,answer.input,answer.output);
  if(session&&saved.success){
+  const lastUser=messages.filter(m=>m.role==='user').at(-1)!;
+  const nextProfile=memory?applyMemory(profile,memory,lastUser,role,messages):profile;
+  if(memory&&isProfileSaveRequest(lastUser.content)){
+   const changed=JSON.stringify(profile)!==JSON.stringify(nextProfile);
+   answer.content=changed?'Profil dan tujuan sudah diperbarui dari informasi yang dapat dicocokkan dengan pesanmu. Silakan periksa hasilnya di Profil & tujuan.':!profile.autoSave?'Profil belum diperbarui karena penyimpanan otomatis sedang dimatikan. Aktifkan di Profil & tujuan, lalu coba lagi.':'Belum ada perubahan profil yang bisa dipastikan dari pesanmu, atau nilainya terkunci. Periksa Profil & tujuan, lalu coba lagi dengan rincian yang ingin disimpan.';
+  }
   const reply:Message={id:retry?.id??crypto.randomUUID(),role:'assistant',content:answer.content,provider:'live',model:snapshot.state.selectedModel??DEFAULT_MODEL,replyTo:saved.data.lastUserId};
   const updated={...session,messages:retry?session.messages.map(m=>m.id===retry.id?replaceReply(m,reply):m):[...session.messages,reply]};
-  const state={...snapshot.state,...(memory?{profile:applyMemory(profile,memory,messages.filter(m=>m.role==='user').at(-1)!,role,messages)}:{}),sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
+  const state={...snapshot.state,...(memory?{profile:nextProfile}:{}),sessions:snapshot.state.sessions.map(s=>s.id===session.id?updated:s)};
   // Save before returning: a disconnected browser can recover this reply on reload.
   const revision=await writeState(user,snapshot.revision,state);
   return json({content:answer.content,provider:'live',state,revision,usage:await quota(user)});

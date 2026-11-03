@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.4.2** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.4.3** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
@@ -17,7 +17,7 @@ SewaJelas starts from a personal problem: a cheap rental can hide unreliable wat
 - Feedback, example rewrites and regeneration; eight recent active style guidelines enter the model context. This is **not fine-tuning**.
 - Per-account history, saved lessons, revision checks and Markdown/JSON exports.
 - Server-side provider requests, encrypted account-scoped credentials and daily usage accounting without an application-imposed daily cap; provider rates and limits still apply.
-- Twenty-three automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
+- Twenty-five automated tests covering actual route handlers, isolation, quotas, encryption, exports and a mocked provider contract.
 
 **Validation boundary:** tests use an explicit Meta mock. The owner reports successful real Muse conversations; the developer regression suite uses synthetic data and has not independently repeated a live-provider call for this release. Current summaries extract quoted snippets rather than verified rental facts. See [validation](docs/VALIDATION.md).
 
@@ -123,3 +123,5 @@ Official protocol references: https://dev.meta.ai/docs/structured-output and htt
 - **0.4.2:** Removed the app's 20-attempt daily cap. Daily usage counting remains; Meta's provider limits and charges still apply.
 
 This README is maintained separately from the deployed Site. A documentation-only commit does not itself update the live app.
+
+- **0.4.3:** More resilient handling for structured profile replies and honest confirmation of saved changes. Real-key verification remains pending.

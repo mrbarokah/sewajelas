@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.3 — 2026-11-03
+
+- Accept fenced JSON and independently validate profile updates when optional fields are absent or malformed, while retaining evidence checks and manual locks.
+- Report whether an explicit profile save actually changed state instead of trusting the model claim. Unreadable responses still show an error; live-provider validation is pending.
+
 ## 0.4.2 — 2026-11-03
 
 - Remove the application-imposed 20 daily attempt cap while retaining daily usage accounting. Provider limits and costs remain applicable.

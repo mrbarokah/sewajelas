@@ -174,3 +174,19 @@ test('explicit save imports evidenced facts from earlier user turns but not assi
  const out=applyMemory(blankProfile,result,history[2],'renter',history);assert.equal(out.facts.location.messageId,'u1');assert.equal(out.facts.budget.value,'20 juta per tahun');assert.equal(out.facts.mustHave,undefined);assert.equal(out.goal.title,'Mencari kontrakan di Tebet');
  assert.equal(applyMemory(blankProfile,result,{id:'x',content:'Terima kasih'},'renter',history).facts.location,undefined);
 });
+
+test('memory reply handles fenced JSON and incomplete optional fields without accepting invalid updates',async()=>{
+ const {parseMemoryReply}=await import('../lib/profile.ts');
+ const x=parseMemoryReply('```json\n{"reply":"Siap","updates":[{"field":"location","value":"Depok","evidence":"Depok"},{"field":"evil","value":"x","evidence":"x"}]}\n```');
+ assert.equal(x.reply,'Siap');assert.equal(x.updates.length,1);assert.equal(x.goal,null);assert.equal(parseMemoryReply('{broken'),null);
+});
+test('explicit save uses earlier user evidence and reports actual profile update, not provider claim',async()=>{
+ const user='save-interview',s=interview();s.messages[4].content='Cari kontrakan di Depok';s.messages.at(-1).content='Update ke profil dan tujuan';
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[s]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('synthetic-key',user),0).run();
+ const original=globalThis.fetch;let result={reply:'Sudah tersimpan!',updates:[{field:'location',value:'Depok',evidence:'Depok'}],goal:{title:'Kontrakan Depok',status:'tracking',evidence:'Cari kontrakan di Depok'}};
+ globalThis.fetch=async()=>Response.json({choices:[{message:{content:JSON.stringify(result)},finish_reason:'stop'}]});
+ try{const r=await (await chat(req('/api/chat',user,'POST',{sessionId:s.id,lastUserId:'m24'}))).json();assert.equal(r.state.profile.facts.location.value,'Depok');assert.equal(r.state.profile.goal.title,'Kontrakan Depok');assert.match(r.content,/sudah diperbarui/);
+ const newer={...s,id:'other',messages:s.messages.map(m=>({...m}))};const state={...r.state,sessions:[...r.state.sessions,newer]};await PUT(req('/api/studio',user,'PUT',{revision:r.revision,state}));result={reply:'Sudah tersimpan!',updates:[{field:'location',value:'Surabaya',evidence:'Surabaya'}],goal:null};
+ const bad=await (await chat(req('/api/chat',user,'POST',{sessionId:'other',lastUserId:'m24'}))).json();assert.match(bad.content,/Belum ada perubahan/);assert.equal(bad.state.profile.facts.location.value,'Depok');
+ }finally{globalThis.fetch=original;}
+});

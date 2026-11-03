@@ -1,6 +1,6 @@
 # SewaJelas handover
 
-Current application version: **0.4.2**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
+Current application version: **0.4.3**. Read `README.md`, `CHANGELOG.md`, `docs/VALIDATION.md`, then the source before editing.
 
 ## Product and constraints
 
@@ -42,3 +42,5 @@ A failed response before server persistence may still need retry. Simultaneous l
 Preserve optional profile/searches/sources/searchId fields when editing state. Never publish QA harness routes. For future task autonomy implement bounded authorization, cancellation, queues and separate social OAuth permissions before enabling actions.
 
 0.4.2 removes the application daily attempt cap while retaining per-account daily usage counts. Provider-side limits and charges still apply.
+
+0.4.3 normalizes some provider JSON deviations and verifies actual saved profile state for explicit save requests. It does not repair arbitrary malformed JSON or guarantee extraction. Live-provider retest required.
