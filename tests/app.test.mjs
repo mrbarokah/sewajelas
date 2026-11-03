@@ -196,7 +196,7 @@ test('search intent and consent are distinct, conservative and Indonesian-friend
  assert.equal(wantsSearch('Oke sekarang udah bisa lanjut carikan kontrakannya?'),true);
  assert.equal(wantsSearch('Saya mencari kontrakan di Depok'),false);
  assert.equal(wantsSearch('Jangan cari kontrakan dulu'),false);
- assert.equal(approvesSearch('Ya'),true);assert.equal(approvesSearch('ya tapi jangan cari'),false);assert.equal(declinesSearch('batal'),true);
+ assert.equal(approvesSearch('Ya'),true);assert.equal(approvesSearch('setuju, lanjutkan'),true);assert.equal(approvesSearch('ya tapi jangan cari'),false);assert.equal(declinesSearch('batal'),true);
 });
 test('chat search requires last user approval and matching saved proposal before network call',async()=>{
  const user='chat-search-approval';const proposal={id:'proposal',role:'assistant',content:'Kata kunci: kos Tebet. Balas ya untuk mencari.',provider:'demo',searchProposal:{query:'kos Tebet'}};const approval={id:'approval',role:'user',content:'ya'};

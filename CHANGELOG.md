@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.5 — 2026-11-03
+
+- Add Setuju, lanjutkan and Batal buttons to the chat search proposal. Record the selection as a chat message and require the existing server-side approval check before searching.
+- Keep the proposal available when a key is not connected; disable repeat clicks while saving. Existing proposals and typed responses remain compatible.
+
 ## 0.4.4 — 2026-11-03
 
 - Move supervised public-web search into the existing conversation: user requests search, reviews the exact query in chat, and types yes or cancel. No search runs before explicit consent.

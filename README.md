@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.4.4** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.4.5** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
@@ -109,7 +109,7 @@ Chat labels now show the complete model name; user-name labels and inline copy b
 
 Open the floating menu → **Profil & tujuan**. A single current rental goal and eight housing fields are stored across sessions. Saved renter chats use one structured-output call for both the reply and evidence-bound profile updates. Since 0.4.1, an explicit request to save an interview can use evidence from earlier user messages in the same session. Manual edits lock fields by default; automatic memory can be disabled. Owner roleplay never updates the real renter profile. This is prompt memory, not training model weights.
 
-In a renter chat, ask to search, review the exact query in the conversation, then type **ya** to approve or **batal** to cancel. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
+In a renter chat, ask to search, review the exact query in the conversation, then select **Setuju, lanjutkan** or **Batal** in the chat. The app uses Meta Responses `web_search`, stores an approval/job before invoking it, and renders HTTPS Facebook/Threads/Instagram source cards only from provider citation annotations after a confirmed tool call. This is public-web discovery, not a direct Marketplace integration or comprehensive coverage. API credit is required even when the conversational mode is free simulation. Only the approved query is sent to search, not the private profile/history. The model may perform multiple internal searches in one Responses request.
 
 Profiles, goals, sources and search logs are included in JSON exports. Chat history and encrypted credentials remain account scoped. Maximum 30 retained search jobs; no automatic retry of an approval ID. A running job after an interrupted process is unconfirmed and must not be presented as completed.
 
@@ -127,3 +127,5 @@ This README is maintained separately from the deployed Site. A documentation-onl
 - **0.4.3:** More resilient handling for structured profile replies and honest confirmation of saved changes. Real-key verification remains pending.
 
 - **0.4.4:** Search requests, query review, consent and results are handled within the same chat. Intent recognition is rule-based and live-provider search remains to be verified.
+
+- **0.4.5:** Search approval and cancellation buttons appear inside the conversation; decisions remain subject to server-side checks.
