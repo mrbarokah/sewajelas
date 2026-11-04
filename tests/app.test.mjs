@@ -275,3 +275,11 @@ test('search diagnostic does not disclose untrusted provider text',async()=>{
  assert.match(searchFailure({status:'cancelled'}),/dibatalkan/);
  assert.doesNotMatch(searchFailure({status:'failed',error:{code:'secret-secret',message:'private'}}),/secret|private/);
 });
+
+test('short search plan separates example terms from private comparison criteria',async()=>{
+ const {buildSearchPlan,wantsSearch}=await import('../lib/search.ts');
+ const profile={facts:{housing:{value:'kontrakan rumah bukan petakan'},location:{value:'Jakarta Selatan sampai maksimal Depok UI'},budget:{value:'maks 20 juta per tahun'},costScope:{value:'khusus sewa saja'}}};
+ const p=buildSearchPlan(profile,'Carikan kontrakan sesuai profil saya');
+ assert.match(p,/kontrakan Jakarta Selatan \| kontrakan Depok UI/);assert.match(p,/Kriteria pembanding:.*20 juta/);assert.doesNotMatch(p,/carikan|sesuai profil/i);
+ const p2=buildSearchPlan(profile,'Coba dengan kata kunci yang lebih singkat\nMisal kontrakan UI depok');assert.match(p2,/Contoh kata kunci: kontrakan UI depok/);assert.equal(wantsSearch('Coba dengan kata kunci yang lebih singkat'),true);assert.equal(wantsSearch('Apa arti kata kunci?'),false);
+});

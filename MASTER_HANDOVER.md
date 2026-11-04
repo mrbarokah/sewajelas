@@ -1,6 +1,6 @@
 # SewaJelas — handover untuk agen pengembang
 
-Pembaruan 3 November 2026. Versi aplikasi 0.4.9; periksa `main` dan riwayat terkini sebelum bekerja karena dokumen ini bisa tertinggal. Repositori privat: https://github.com/mrbarokah/sewajelas . Situs: https://sewajelas-ruang-latihan.tamecreek.chatgpt.site .
+Pembaruan 3 November 2026. Versi aplikasi 0.5.0; periksa `main` dan riwayat terkini sebelum bekerja karena dokumen ini bisa tertinggal. Repositori privat: https://github.com/mrbarokah/sewajelas . Situs: https://sewajelas-ruang-latihan.tamecreek.chatgpt.site .
 
 ## Catatan 0.4.8
 
@@ -9,6 +9,10 @@ Pemulihan pencarian yang statusnya belum pasti memerlukan persetujuan baru dan t
 ## Catatan 0.4.9
 
 Log produksi menunjukkan permintaan pencarian diterima dan status berhasil dipantau; aplikasi sebelumnya menyamakan status gagal/tidak lengkap/dibatalkan. Recheck GET dapat memeriksa kegagalan lama tanpa memulai pencarian ulang. Pencarian menggunakan reasoning low dan 4096 output token, dapat meningkatkan biaya; penyebab spesifik dan keberhasilan live belum terverifikasi. Jangan log API key atau percakapan.\n
+## Catatan 0.5.0
+
+Rencana pencarian menampilkan contoh kata singkat serta kriteria, meminta persetujuan, dan mengirim satu permintaan ke Meta. Contoh bukan jaminan kueri aktual; model Meta dapat menjalankan beberapa pencarian. Aplikasi belum memiliki integrasi atau filter Marketplace langsung. Progres menjelaskan status yang diamati dan tidak mengaku sebagai penalaran privat. Perlu verifikasi langsung dengan pengguna dan API yang sah.
+
 ## Instruksi siap tempel untuk agen mana pun
 
 > Kamu bertugas membantu mengembangkan SewaJelas. Baca README.md, HANDOVER.md, CHANGELOG.md, dokumen ini, dan kode terkait; jangan menganggap ringkasan ini selalu mutakhir. Periksa remote, branch, commit terbaru dan perubahan lokal sebelum mengedit. Jelaskan temuan dan buat perubahan terkecil yang menyelesaikan permintaan. Pertahankan data akun, kredensial terenkripsi, akses pengguna, riwayat, ekspor, perilaku pemulihan koneksi, serta tampilan mobile. Jangan baca atau tampilkan kunci API, transkrip pengguna atau data privat di log, prompt, commit atau laporan. Gunakan data sintetis untuk tes. Jangan force push, reset, hapus data, mengubah izin, memutar APP_VAULT_KEY, melakukan migrasi destruktif, atau deploy tanpa instruksi/otorisasi yang relevan. Bekerja pada branch baru untuk perubahan substansial, jalankan tes/typecheck/build, tinjau diff, kemudian buat commit/PR jika mempunyai akses dan diminta. Laporkan apa yang diuji, batasan, commit, dan apakah perubahan telah dipasang di situs; jangan mengklaim deploy hanya karena GitHub sudah di-update. Jika akses tidak cukup, jelaskan apa yang terhalang dan berikan patch yang dapat ditinjau.

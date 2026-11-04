@@ -16,7 +16,7 @@ export function parseSearch(raw:unknown){
 }
 
 // Deliberately conservative: asking to search is distinct from merely describing needs.
-export function wantsSearch(text:string){const t=text.toLowerCase();if(/\b(jangan|tidak usah|gak usah|nggak usah|belum|batal)\b.{0,30}\b(cari|carikan|pencarian)/i.test(t))return false;return /\b(carikan|cariin|cari|search|telusuri|temukan)\b/i.test(t)&&(/\b(kos|kost|kontrakan|rumah|hunian|listing|properti|sewa|opsi|pilihan|unit|tempat tinggal|listingnya|kontrakannya|kosannya|rumahnya)\b/i.test(t)||/\b(lanjut|sekarang|tolong|dong|ya|nya)\b/i.test(t));}
+export function wantsSearch(text:string){const t=text.toLowerCase();if(/\b(jangan|tidak usah|gak usah|nggak usah|belum|batal)\b.{0,30}\b(cari|carikan|pencarian)/i.test(t))return false;return (/\b(kata kunci|keyword)\b/i.test(t)&&/\b(coba|pakai|gunakan|ubah|ganti|dengan)\b/i.test(t))||/\b(carikan|cariin|cari|search|telusuri|temukan)\b/i.test(t)&&(/\b(kos|kost|kontrakan|rumah|hunian|listing|properti|sewa|opsi|pilihan|unit|tempat tinggal|listingnya|kontrakannya|kosannya|rumahnya)\b/i.test(t)||/\b(lanjut|sekarang|tolong|dong|ya|nya)\b/i.test(t));}
 export function approvesSearch(text:string){return /^(?:ya|iya|iyah|yes|oke|ok|boleh|setuju|silakan|silahkan|lanjut|lanjutkan|cari sekarang|ya cari|ya carikan|boleh cari|setuju cari|oke cari|iya cari|ya lanjut|setuju, lanjutkan)(?:[.!\s]*)$/i.test(text.trim());}
 export function declinesSearch(text:string){return /^(?:tidak|tidak dulu|nggak|gak|jangan|batal|cancel|nanti saja|belum)(?:[.!\s]*)$/i.test(text.trim());}
 
@@ -37,4 +37,21 @@ export function buildProfileQuery(profile:{facts:Record<string,{value:string}|un
  const genericHousingOnly=/^(?:kontrakan|kos|kost|rumah|hunian|tempat\s+tinggal|properti|listing|sewa)$/i.test(words);
  if(words&&!(genericHousingOnly&&f.housing?.value?.trim())&&!base.some(v=>v.toLowerCase().includes(words.toLowerCase())))base.push(words);
  return base.join(' · ').slice(0,600);
+}
+
+// Examples are a plan submitted for approval, not claims about provider queries.
+export function buildSearchPlan(profile:{facts:Record<string,{value:string}|undefined>},instruction:string){
+ const f=profile.facts; const housing=f.housing?.value?.trim()||'';
+ const request=instruction.trim();
+ const explicit=(request.match(/(?:misal(?:nya)?|contoh)\s*[:：]?\s*([^\n.?]{3,100})/i)||request.match(/(?:kata kunci(?:nya)?(?: adalah)?|keyword(?:nya)?(?: adalah)?)\s*[:：]?\s*((?:kontrakan|kos|kost|rumah|sewa rumah)\b[^\n.?]{0,75})/i))?.[1]?.trim();
+ const direct=request.match(/\b(?:cari(?:kan|in)?|search|telusuri)\s+(?:ulang\s+)?((?:kontrakan|kos|kost|rumah|sewa rumah)\s+[^\n.?]{2,75})/i)?.[1]?.replace(/\s+(?:sesuai|berdasarkan|dari)\s+(?:profil|kebutuhan|tujuan).*$/i,'').trim();
+ const selected=(explicit||direct||'').replace(/\b(?:ya|dong|tolong)\b/gi,' ').replace(/\s+/g,' ').trim();
+ const kind=/\b(kos|kost)\b/i.test(housing||selected)?'kos':/rumah|kontrakan/i.test(housing||selected)?'kontrakan':'';
+ const loc=(f.location?.value||'').split(/\s+(?:sampai(?:\s+maksimal)?|hingga|s\/d|atau)\s+|[,;]/i).map(x=>x.trim()).filter(Boolean).slice(0,3);
+ const chosen=/^(?:kontrakan|kos|kost|rumah|sewa rumah)$/i.test(selected)?'':selected;
+ const candidates=[chosen,...(kind?loc.map(x=>`${kind} ${x}`):[])].filter((v,i,a)=>!!v&&a.findIndex(x=>x.toLowerCase()===v.toLowerCase())===i).slice(0,3);
+ if(!candidates.length&&kind)candidates.push(kind);
+ if(!candidates.length)return '';
+ const context=[housing,f.location?.value,f.budget?.value,f.costScope?.value,f.workLocation?.value?'lokasi kerja '+f.workLocation.value:undefined].filter(Boolean).join(' · ');
+ return `Contoh kata kunci: ${candidates.join(' | ')}${context?`\nKriteria pembanding: ${context}`:''}`.slice(0,600);
 }

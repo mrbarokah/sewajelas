@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 — 2026-11-04
+
+- Propose short example keywords separately from comparison criteria before approval. Muse chooses actual provider queries; direct Marketplace filters remain unavailable.
+- Show expandable observed search stages, without claiming access to private reasoning. Repair search-intent handoff and correct export version.
+- Search is still one approved Meta request; the provider may run multiple searches. Live provider behavior requires user verification.
+
 ## 0.4.9 — 2026-11-04
 
 - Distinguish Meta incomplete, failed, and cancelled responses with safe reason-specific messages; recheck a prior failure without submitting another search.
