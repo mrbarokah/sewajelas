@@ -1,3 +1,8 @@
+# 0.6.5
+
+- Contoh kueri berfokus pada jenis hunian dan lokasi singkat; konteks kebutuhan tetap terpisah untuk penilaian. Instruksi meminta Meta memprioritaskan threads.com dan tidak memperpanjang kata kunci. Meta menentukan kueri aktual.
+- Tambahkan akses jalan/mobil, transportasi, patokan dan mutu foto yang benar-benar tersedia ke panduan analisis listing.
+
 # 0.6.4
 
 - Kenali permintaan dengan kata “keywords” dan persetujuan “lanjutkan cari dulu”.

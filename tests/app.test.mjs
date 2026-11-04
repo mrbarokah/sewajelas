@@ -280,7 +280,7 @@ test('short search plan separates example terms from private comparison criteria
  const {buildSearchPlan,wantsSearch}=await import('../lib/search.ts');
  const profile={facts:{housing:{value:'kontrakan rumah bukan petakan'},location:{value:'Jakarta Selatan sampai maksimal Depok UI'},budget:{value:'maks 20 juta per tahun'},costScope:{value:'khusus sewa saja'}}};
  const p=buildSearchPlan(profile,'Carikan kontrakan sesuai profil saya');
- assert.match(p,/kontrakan Jakarta Selatan \| kontrakan Depok UI/);assert.match(p,/Kriteria pembanding:.*20 juta/);assert.doesNotMatch(p,/carikan|sesuai profil/i);
+ assert.match(p,/kontrakan Jakarta Selatan \| kontrakan Depok \| kontrakan UI/);assert.match(p,/Kriteria pembanding:.*20 juta/);assert.doesNotMatch(p,/carikan|sesuai profil/i);
  const p2=buildSearchPlan(profile,'Coba dengan kata kunci yang lebih singkat\nMisal kontrakan UI depok');assert.match(p2,/Contoh kata kunci: kontrakan UI depok/);assert.equal(wantsSearch('Coba dengan kata kunci yang lebih singkat'),true);assert.equal(wantsSearch('Apa arti kata kunci?'),false);
 });
 
@@ -378,4 +378,13 @@ test('search diagnostics only report provider actions and known candidate counts
  assert.deepEqual(out.trace.queries,['kontrakan Depok','kontrakan UI']);assert.equal(out.trace.rawCount,3);assert.equal(out.trace.domains.marketplace,1);assert.equal(out.trace.shown,1);
  const legacy=parseSearch(searchPayload());assert.deepEqual(legacy.trace.queries,[]);assert.equal(legacy.trace.rawCount,null);
  const malformed=parseSearch({...payload,output:[{...payload.output[0],action:'unsupported'}]},'kontrakan Depok');assert.deepEqual(malformed.trace.queries,[]);
+});
+
+
+test('short queries separate UI and Depok and keep rental criteria in comparison',async()=>{
+ const {buildSearchPlan}=await import('../lib/search.ts');const {rankSocialCandidates}=await import('../lib/social-sources.ts');
+ const profile={facts:{housing:{value:'kontrakan rumah'},location:{value:'Jakarta Selatan sampai maksimal Depok UI'},budget:{value:'maks 20 juta per tahun'}}};
+ const plan=buildSearchPlan(profile,'Carikan sesuai profil saya');const [terms,context]=plan.split('\n');assert.match(terms,/kontrakan Depok \| kontrakan UI/);assert.doesNotMatch(terms,/tahun|20 juta|disewakan/);assert.match(context,/20 juta per tahun/);
+ const ui=rankSocialCandidates([{url:'https://www.threads.com/@x/post/1',title:'Kontrakan UI dekat kampus'}],'Contoh kata kunci: kontrakan UI');assert.equal(ui.length,1);
+ const other=rankSocialCandidates([{url:'https://www.threads.com/@x/post/2',title:'Kontrakan Surabaya'}],'Contoh kata kunci: kontrakan UI');assert.equal(other.length,0);
 });

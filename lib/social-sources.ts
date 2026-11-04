@@ -17,9 +17,10 @@ export function individualPostUrl(value:string):boolean{
 function norm(s:string){return s.toLocaleLowerCase('id-ID').normalize('NFKC').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ');}
 function locations(plan:string){
  const line=plan.split(/\n/)[0].replace(/^contoh kata kunci:\s*/i,'');
- return line.split('|').map(part=>norm(part.replace(/\b(?:kontrakan|kos|kost|rumah|sewa|hunian|dekat|di|daerah)\b/gi,' '))).filter(x=>x.length>=3).slice(0,3);
+ return line.split('|').map(part=>norm(part.replace(/\b(?:kontrakan|kos|kost|rumah|sewa|hunian|dekat|di|daerah)\b/gi,' '))).filter(x=>x.length>=3||x==='ui').slice(0,4);
 }
 function locationScore(text:string,loc:string){const terms=loc.split(' ').filter(x=>x.length>=4&&!['jakarta','selatan','utara','timur','barat','pusat'].includes(x));
+ if(loc==='ui')return /(?:^| )ui(?: |$)|universitas indonesia/.test(text)?3:0;
  if(text.includes(loc))return 3;if(loc==='jakarta selatan'&&/\bjaksel\b/.test(text))return 3;
  return terms.some(x=>new RegExp('(?:^| )'+x+'(?: |$)').test(text))?2:0;}
 export function rankSocialCandidates(candidates:SocialCandidate[],plan:string):SocialCandidate[]{

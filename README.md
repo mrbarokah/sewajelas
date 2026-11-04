@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.6.4** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.6.5** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -164,3 +164,7 @@ Timer menampilkan waktu berlalu sejak persetujuan atau pengiriman, bukan bukti M
 
 ### Diagnostik pencarian (0.6.4)
 Permintaan dengan keywords menghasilkan rencana yang bisa disetujui. Kueri aktual ditampilkan hanya jika tersedia dari Meta, bersama jumlah kandidat dan hasil yang dipilih; ini tidak membuktikan akses langsung platform atau cakupan menyeluruh.
+
+
+### Pencarian singkat (0.6.5)
+Contoh kata kunci memisahkan jenis hunian dan area; kriteria lain untuk analisis. Instruksi mengutamakan threads.com; Meta memilih kueri aktual. Foto belum diambil otomatis dari tautan.

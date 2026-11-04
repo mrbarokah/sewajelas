@@ -56,9 +56,11 @@ export function buildSearchPlan(profile:{facts:Record<string,{value:string}|unde
  const direct=request.match(/\b(?:cari(?:kan|in)?|search|telusuri)\s+(?:ulang\s+)?((?:kontrakan|kos|kost|rumah|sewa rumah)\s+[^\n.?]{2,75})/i)?.[1]?.replace(/\s+(?:sesuai|berdasarkan|dari)\s+(?:profil|kebutuhan|tujuan).*$/i,'').trim();
  const selected=(explicit||direct||'').replace(/^(?:kata kunci|keywords?)\s*[:：]?\s*/i,'').replace(/\b(?:ya|dong|tolong)\b/gi,' ').replace(/\s+/g,' ').trim();
  const kind=/\b(kos|kost)\b/i.test(housing||selected)?'kos':/rumah|kontrakan/i.test(housing||selected)?'kontrakan':'';
- const loc=(f.location?.value||'').split(/\s+(?:sampai(?:\s+maksimal)?|hingga|s\/d|atau)\s+|[,;]/i).map(x=>x.trim()).filter(Boolean).slice(0,3);
- const chosen=/^(?:kontrakan|kos|kost|rumah|sewa rumah)$/i.test(selected)?'':selected;
- const candidates=[chosen,...(kind?loc.map(x=>`${kind} ${x}`):[])].filter((v,i,a)=>!!v&&a.findIndex(x=>x.toLowerCase()===v.toLowerCase())===i).slice(0,3);
+ const loc=(f.location?.value||'').split(/\s+(?:sampai(?:\s+(?:maksimal|ke arah|arah))?|hingga|s\/d|atau)\s+|[,;]/i).flatMap(x=>{const v=x.trim();return /^(?:depok\s+ui|ui\s+depok)$/i.test(v)?['Depok','UI']:[v];}).map(x=>x.trim()).filter(Boolean).slice(0,4);
+ // Only type + short area terms belong in the query; criteria remain in the approved comparison context.
+ const shortSelected=selected.split(/\s+(?:dengan|maks(?:imal)?|budget|anggaran|harga|tahunan|bulanan|disewakan|sewa|khusus|untuk)\b/i)[0].split(/\s+/).slice(0,3).join(' ');
+ const chosen=/^(?:kontrakan|kos|kost|rumah|sewa rumah)$/i.test(shortSelected)?'':shortSelected;
+ const candidates=[chosen,...(kind?loc.map(x=>`${kind} ${x}`):[])].filter((v,i,a)=>!!v&&a.findIndex(x=>x.toLowerCase()===v.toLowerCase())===i).slice(0,4);
  if(!candidates.length&&kind)candidates.push(kind);
  if(!candidates.length)return '';
  const context=[housing,f.location?.value,f.budget?.value,f.costScope?.value,f.workLocation?.value?'lokasi kerja '+f.workLocation.value:undefined].filter(Boolean).join(' · ');
