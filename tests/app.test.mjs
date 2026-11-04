@@ -141,11 +141,11 @@ test('profile persists across sessions and is injected in the same structured ch
  await chat(req('/api/chat',user,'POST',{sessionId:next.id,lastUserId:'m24'}));assert.match(payload.messages[0].content,/PROFIL LINTAS SESI/);assert.match(payload.messages[0].content,/Tebet/);
  }finally{globalThis.fetch=original;}
 });
-function searchPayload(withCitation=true){return {status:'completed',output:[{type:'web_search_call',status:'completed'},{type:'message',content:[{type:'output_text',text:'Sumber publik untuk diperiksa.',annotations:withCitation?[{type:'url_citation',url:'https://www.facebook.com/marketplace/item/123',title:'Kontrakan contoh sintetis'}]:[]}]}],usage:{input_tokens:20,output_tokens:10}};}
+function searchPayload(withCitation=true){return {status:'completed',output:[{type:'web_search_call',status:'completed'},{type:'message',content:[{type:'output_text',text:'Sumber publik untuk diperiksa.',annotations:withCitation?[{type:'url_citation',url:'https://www.facebook.com/marketplace/item/123',title:'Kontrakan Tebet contoh sintetis'}]:[]}]}],usage:{input_tokens:20,output_tokens:10}};}
 test('search cards require actual tool completion and provider citations on allowed HTTPS domains',()=>{
  assert.equal(metaUrl('https://facebook.com.evil.example/x'),false);assert.equal(metaUrl('javascript:alert(1)'),false);assert.equal(metaUrl('https://user:pass@facebook.com/x'),false);
  const result=parseSearch(searchPayload());assert.equal(result.sources.length,1);assert.match(result.content,/belum diverifikasi/);
- assert.equal(parseSearch(searchPayload(false)).sources.length,0);assert.match(parseSearch(searchPayload(false)).content,/belum ada sumber/);
+ assert.equal(parseSearch(searchPayload(false)).sources.length,0);assert.match(parseSearch(searchPayload(false)).content,/belum ada postingan/);
  assert.throws(()=>parseSearch({...searchPayload(),output:searchPayload().output.slice(1)}),/belum mengonfirmasi/);assert.throws(()=>parseSearch({...searchPayload(),status:'incomplete'}));
 });
 test('approved search is account-scoped, durable, idempotent and excludes private profile',async()=>{
@@ -285,7 +285,23 @@ test('short search plan separates example terms from private comparison criteria
 });
 
 test('retrieved public links are marked unverified and never presented as cited answers',()=>{
- const payload={status:'completed',output:[{type:'web_search_call',status:'completed',results:[{type:'text_result',url:'https://www.facebook.com/marketplace/item/123',title:'Possible listing'},{type:'text_result',url:'https://www.threads.net/@x/post/123',title:'Post'},{type:'text_result',url:'https://www.instagram.com/p/abc',title:'Photo'},{type:'text_result',url:'https://facebook.com.evil.example/x',title:'Bad'}]},{type:'message',content:[{type:'output_text',text:'Invented price',annotations:[]}]}]};
- const result=parseSearch(payload);assert.equal(result.sources.length,3);assert.ok(result.sources.every(s=>s.kind==='retrieved'));assert.doesNotMatch(result.content,/Invented price/);assert.match(result.content,/belum tentu/);
+ const payload={status:'completed',output:[{type:'web_search_call',status:'completed',results:[{type:'text_result',url:'https://www.facebook.com/marketplace/item/123',title:'Kontrakan Depok'},{type:'text_result',url:'https://www.threads.net/@x/post/123',title:'Kontrakan Depok'},{type:'text_result',url:'https://www.instagram.com/p/abc',title:'Kontrakan Depok'},{type:'text_result',url:'https://facebook.com.evil.example/x',title:'Bad'}]},{type:'message',content:[{type:'output_text',text:'Invented price',annotations:[]}]}]};
+ const result=parseSearch(payload);assert.equal(result.sources.length,3);assert.ok(result.sources.every(s=>s.kind==='retrieved'));assert.doesNotMatch(result.content,/Invented price/);assert.match(result.content,/belum diverifikasi/);
  assert.throws(()=>parseSearch({...payload,output:[{...payload.output[0],status:'in_progress'}]}));
+});
+
+test('strict relevance filtering rejects irrelevant results, generic pages and weak evidence, with a maximum of five',async()=>{
+ const {rankSocialCandidates}=await import('../lib/social-sources.ts');
+ const candidates=[{url:'https://tech.facebook.com/games',title:'Gaming Creator Cantika Gaming'}, {url:'https://www.facebook.com/',title:'Facebook'}, {url:'https://www.facebook.com/marketplace/item/999',title:'Rumah Surabaya disewakan'}, {url:'https://www.facebook.com/marketplace/item/998',title:'Facebook'}];
+ for(let i=0;i<8;i++)candidates.push({url:`https://www.facebook.com/marketplace/item/${100+i}`,title:`Kontrakan Depok ${i}`});
+ candidates.push({url:'https://www.threads.net/@user/post/Abc',title:'Kontrakan Jakarta Selatan tersedia'});
+ const ranked=rankSocialCandidates(candidates,'Contoh kata kunci: kontrakan Jakarta Selatan | kontrakan Depok UI\nKriteria pembanding: maksimal 20 juta/tahun');
+ assert.equal(ranked.length,5);assert.ok(ranked.every(x=>/Kontrakan/.test(x.title)));assert.ok(!ranked.some(x=>/999|998/.test(x.url)));
+ assert.equal(rankSocialCandidates(candidates.slice(0,4),'kontrakan Depok').length,0);
+ assert.equal(rankSocialCandidates([{url:'https://www.facebook.com/marketplace/item/1',title:'Kos Depok tersedia'}],'kontrakan Depok').length,0); // a kos-only result is not evidence of a house
+});
+
+test('social capability status requires an account and exposes no credentials or claimed connections',async()=>{
+ const {GET:status}=await import('../app/api/integrations/route.ts');assert.equal((await status(req('/api/integrations',null))).status,401);
+ const response=await status(req('/api/integrations','social-user'));const body=await response.json();assert.equal(body.providers.threads.directSearch,'not_configured');assert.equal(body.providers.marketplace.directSearch,'unavailable');assert.doesNotMatch(JSON.stringify(body),/access_token|client_secret|password/);
 });

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2 — 2026-11-04
+
+- Limit results to five individual public posts with title/snippet evidence of housing and the approved area; omit results without sufficient evidence. Price and availability remain unverified.
+- Add an explicit capability registry for future social connectors. No direct platform authorization is configured; Threads, Instagram and Marketplace coverage is not guaranteed.
+
 ## 0.5.1 — 2026-11-04
 
 - Default the renter experience to live Muse and remove practice entry points from the main flow. Existing session history is preserved.

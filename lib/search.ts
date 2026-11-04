@@ -1,24 +1,19 @@
+import { rankSocialCandidates,type SocialCandidate } from '@/lib/social-sources';
 import { z } from 'zod';
 export function metaUrl(value:string){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&['facebook.com','instagram.com','threads.net','threads.com'].some(h=>u.hostname===h||u.hostname.endsWith('.'+h));}catch{return false;}}
 export const sourceSchema=z.object({url:z.string().max(2000).refine(metaUrl),title:z.string().max(300),kind:z.enum(['retrieved']).optional()});
 export const searchJobSchema=z.object({id:z.string().min(1).max(100),sessionId:z.string().max(100),query:z.string().min(3).max(600),approvedAt:z.string().max(40),status:z.enum(['running','completed','failed']),providerResponseId:z.string().regex(/^resp_[A-Za-z0-9_-]+$/).max(150).optional(),approvalMessageId:z.string().max(100).optional(),error:z.string().max(600).optional(),finishedAt:z.string().max(40).optional()});
-// Only provider citation annotations, never model-written URLs, become source cards.
-export function parseSearch(raw:unknown){
- const response=z.object({status:z.string(),output:z.array(z.object({type:z.string(),status:z.string().nullish(),results:z.array(z.object({type:z.string().nullish(),url:z.string().nullish(),title:z.string().nullish()}).passthrough()).nullish(),content:z.array(z.object({type:z.string(),text:z.string().nullish(),annotations:z.array(z.object({type:z.string(),url:z.string().nullish(),title:z.string().nullish()}).passthrough()).nullish()}).passthrough()).nullish()}).passthrough()),usage:z.object({input_tokens:z.number().nullish(),output_tokens:z.number().nullish()}).nullish()}).parse(raw);
+// Provider hits are untrusted; relevance is based only on the approved plan and available title/snippet evidence.
+export function parseSearch(raw:unknown,plan=''){
+ const response=z.object({status:z.string(),output:z.array(z.object({type:z.string(),status:z.string().nullish(),results:z.array(z.object({type:z.string().nullish(),url:z.string().nullish(),title:z.string().nullish(),snippet:z.string().nullish()}).passthrough()).nullish(),content:z.array(z.object({type:z.string(),annotations:z.array(z.object({type:z.string(),url:z.string().nullish(),title:z.string().nullish()}).passthrough()).nullish()}).passthrough()).nullish()}).passthrough()),usage:z.object({input_tokens:z.number().nullish(),output_tokens:z.number().nullish()}).nullish()}).parse(raw);
  if(response.status!=='completed'||!response.output.some(i=>i.type==='web_search_call'&&i.status==='completed'))throw new Error('Layanan belum mengonfirmasi pencarian selesai. Tidak ada hasil yang dianggap terverifikasi.');
- const blocks=response.output.filter(i=>i.type==='message').flatMap(i=>i.content??[]).filter(b=>b.type==='output_text');
- const sources: z.infer<typeof sourceSchema>[]=[];
- for(const b of blocks)for(const a of b.annotations??[]){if(a.type==='url_citation'&&a.url&&metaUrl(a.url)&&a.url.length<=2000&&!sources.some(s=>s.url===a.url))sources.push({url:a.url,title:(a.title||new URL(a.url).hostname).slice(0,300)});}
- if(!sources.length){
-  for(const item of response.output.filter(i=>i.type==='web_search_call'&&i.status==='completed'))for(const hit of item.results??[]){
-   const url=hit.url;if(hit.type==='text_result'&&url&&url.length<=2000&&metaUrl(url)&&!sources.some(s=>s.url===url))sources.push({url,title:(hit.title?.trim()||new URL(url).hostname).slice(0,300),kind:'retrieved'});
-  }
-  if(sources.length)return {content:'Aku menemukan beberapa tautan publik berikut. Ini hasil pencarian, belum tentu listing hunian, masih tersedia, atau sesuai kebutuhanmu. Buka dan periksa satu per satu.',sources:sources.slice(0,20),usage:response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined};
- }
- if(!sources.length)return {content:'Pencarian selesai, tetapi belum ada sumber Facebook, Threads, atau Instagram publik yang dapat ditampilkan dengan sitasi. Ini bukan bukti bahwa tidak ada listing. Coba ubah lokasi atau kata kunci.',sources:[],usage:response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined};
- const content=blocks.map(b=>b.text??'').join('\n');
- if(!content||content.length>3700)throw new Error('Ringkasan pencarian belum lengkap. Ulangi dengan kata kunci lebih spesifik.');
- return {content:'Hasil web publik · ketersediaan dan klaim listing belum diverifikasi.\n\n'+content,sources:sources.slice(0,20),usage:response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined};
+ const hits:SocialCandidate[]=[];
+ for(const item of response.output.filter(i=>i.type==='web_search_call'&&i.status==='completed'))for(const hit of item.results??[])if(hit.type==='text_result'&&hit.url&&metaUrl(hit.url)&&hit.url.length<=2000)hits.push({url:hit.url,title:(hit.title||new URL(hit.url).hostname).slice(0,300),snippet:(hit.snippet||'').slice(0,2000),kind:'retrieved'});
+ for(const item of response.output.filter(i=>i.type==='message'))for(const block of item.content??[])for(const citation of block.annotations??[])if(citation.type==='url_citation'&&citation.url&&metaUrl(citation.url)&&citation.url.length<=2000)hits.push({url:citation.url,title:(citation.title||new URL(citation.url).hostname).slice(0,300)});
+ const sources=rankSocialCandidates(hits,plan).map(({url,title,kind})=>({url,title,...(kind?{kind}: {})}));
+ const usage=response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined;
+ if(!sources.length)return {content:'Pencarian selesai, tetapi belum ada postingan yang cukup jelas cocok dengan jenis hunian dan lokasi yang diminta. Coba kata kunci atau area lain; ini bukan bukti bahwa listing tidak ada.',sources,usage};
+ return {content:'Berikut maksimal lima postingan yang terlihat relevan berdasarkan judul atau cuplikan. Harga, ketersediaan, kondisi, dan kecocokannya belum diverifikasi; periksa sumber sebelum mengambil keputusan.',sources,usage};
 }
 
 // Deliberately conservative: asking to search is distinct from merely describing needs.

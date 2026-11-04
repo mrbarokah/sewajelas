@@ -3,8 +3,9 @@ import { parseSearch } from '@/lib/search';
 import { MAX_MESSAGES,type Message } from '@/lib/studio';
 import { ApiError,readState,writeState,addUsage,quota } from '@/lib/server';
 export async function finishSearch(user:string,id:string,raw:unknown){
- const result=parseSearch(raw);const current=await readState(user);const job=current.state.searches?.find(j=>j.id===id);
+ const current=await readState(user);const job=current.state.searches?.find(j=>j.id===id);
  if(!job)throw new ApiError(404,'Pencarian tidak ditemukan.');
+ const result=parseSearch(raw,job.query);
  if(job.status==='completed')return {state:current.state,revision:current.revision,status:'completed',usage:await quota(user)};
  if(job.status!=='running')throw new ApiError(409,'Pencarian ini sudah berakhir.');
  const target=current.state.sessions.find(s=>s.id===job.sessionId);if(!target||target.messages.length>=MAX_MESSAGES)throw new ApiError(409,'Sesi berubah saat pencarian berjalan. Hasil belum dapat disimpan.');
