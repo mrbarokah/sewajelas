@@ -305,3 +305,15 @@ test('social capability status requires an account and exposes no credentials or
  const {GET:status}=await import('../app/api/integrations/route.ts');assert.equal((await status(req('/api/integrations',null))).status,401);
  const response=await status(req('/api/integrations','social-user'));const body=await response.json();assert.equal(body.providers.threads.directSearch,'not_configured');assert.equal(body.providers.marketplace.directSearch,'unavailable');assert.doesNotMatch(JSON.stringify(body),/access_token|client_secret|password/);
 });
+
+test('account deletion requires authentication, same origin and explicit confirmation; isolates other accounts',async()=>{
+ const {POST:erase}=await import('../app/api/delete-data/route.ts');const a='delete-a',b='delete-b';
+ await PUT(req('/api/studio',a,'PUT',{revision:0,state}));await PUT(req('/api/studio',b,'PUT',{revision:0,state}));
+ for(const user of [a,b]){await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('mock-key',user),0).run();await reserve(user);}
+ assert.equal((await erase(req('/api/delete-data',null,'POST',{confirmation:'HAPUS'}))).status,401);
+ assert.equal((await erase(req('/api/delete-data',a,'POST',{confirmation:'HAPUS'},'https://evil.test'))).status,403);
+ assert.equal((await erase(req('/api/delete-data',a,'POST',{confirmation:'yes'}))).status,400);
+ assert.equal((await erase(req('/api/delete-data',a,'POST',{confirmation:'HAPUS'}))).status,200);
+ assert.equal((await (await GET(req('/api/studio',a))).json()).revision,0);assert.equal(await getKey(a),null);assert.equal((await quota(a)).count,0);
+ assert.equal((await (await GET(req('/api/studio',b))).json()).revision,1);assert.equal(await getKey(b),'mock-key');assert.equal((await quota(b)).count,1);
+});

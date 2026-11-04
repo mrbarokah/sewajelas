@@ -4,6 +4,7 @@ sqlite.exec('CREATE TABLE studio(user_id TEXT PRIMARY KEY,revision INTEGER NOT N
 export const env = {
   APP_VAULT_KEY: 'unit-test-key-never-used-in-production',
   DB: {
+    async batch(statements) { sqlite.exec('BEGIN'); try { const results=[]; for (const statement of statements) results.push(await statement.run()); sqlite.exec('COMMIT'); return results; } catch (e) { sqlite.exec('ROLLBACK'); throw e; } },
     prepare(sql) {
       const statement = sqlite.prepare(sql);
       return {

@@ -1,6 +1,6 @@
 # SewaJelas — handover untuk agen pengembang
 
-Pembaruan 3 November 2026. Versi aplikasi 0.5.2; periksa `main` dan riwayat terkini sebelum bekerja karena dokumen ini bisa tertinggal. Repositori privat: https://github.com/mrbarokah/sewajelas . Situs: https://sewajelas-ruang-latihan.tamecreek.chatgpt.site .
+Pembaruan 3 November 2026. Versi aplikasi 0.5.3; periksa `main` dan riwayat terkini sebelum bekerja karena dokumen ini bisa tertinggal. Repositori privat: https://github.com/mrbarokah/sewajelas . Situs: https://sewajelas-ruang-latihan.tamecreek.chatgpt.site .
 
 ## Catatan 0.4.8
 
@@ -20,6 +20,10 @@ Pengalaman penyewa menggunakan Muse secara default. Pencarian meminta hasil ment
 ## Catatan 0.5.2
 
 Filter konservatif menggunakan judul atau cuplikan dan lokasi dari rencana yang disetujui, maksimal lima postingan; harga dan ketersediaan belum diverifikasi, hasil relevan dapat terbuang jika metadata kurang lengkap. Registry kapabilitas dan rancangan koneksi tersedia; OAuth dan API sosial langsung belum diimplementasikan. Jangan nyatakan konektor aktif tanpa izin dan tes langsung.
+
+## Catatan 0.5.3
+
+Halaman /privacy, /terms, /data-deletion mengikuti batas akses situs. Endpoint penghapusan memerlukan akun, origin yang cocok dan konfirmasi; menghapus baris studio, kredensial, serta pemakaian akun di D1. Tidak menghapus data provider atau ekspor pengguna. Tinjau kebijakan dan operasional secara hukum sebelum publikasi dan pastikan URL tersedia untuk Meta.
 
 ## Instruksi siap tempel untuk agen mana pun
 

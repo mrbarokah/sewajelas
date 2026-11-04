@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.3 — 2026-11-04
+
+- Add privacy, terms and data-deletion information and an authenticated, explicitly confirmed in-app deletion of account data. Deletion does not remove external provider copies or exports.
+- Legal pages inherit the Site's access controls; public availability for external review must be configured separately.
+
 ## 0.5.2 — 2026-11-04
 
 - Limit results to five individual public posts with title/snippet evidence of housing and the approved area; omit results without sufficient evidence. Price and availability remain unverified.

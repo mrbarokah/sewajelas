@@ -1,0 +1,2 @@
+import type { ReactNode } from 'react';
+export function LegalPage({title,children}:{title:string;children:ReactNode}){return <main className="legal-page"><a className="legal-brand" href="/">SewaJelas<span>.</span></a><nav><a href="/privacy">Privasi</a><a href="/terms">Ketentuan</a><a href="/data-deletion">Penghapusan data</a></nav><article><p className="legal-date">Terakhir diperbarui: 4 November 2026</p><h1>{title}</h1>{children}</article><footer>Pertanyaan? <a href="mailto:mrizkybar@gmail.com">mrizkybar@gmail.com</a></footer></main>}

@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.5.2** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.5.3** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -12,6 +12,8 @@ Version 0.5.0 proposes short search terms and displays observed search progress.
 Version 0.5.1 defaults to Muse and can show provider-returned uncited search hits separately as unverified links. Live social-platform coverage is not guaranteed. See the changelog.
 
 Version 0.5.2 filters public search results using available listing-type and location evidence, and presents at most five. Official social integrations are not connected. See the changelog.
+
+Version 0.5.3 adds privacy, terms, deletion instructions and authenticated account-data deletion. Pages inherit the Site's access policy; external availability remains to be confirmed.
 
 Version headings below describe when features were introduced; they are not the current application version. Check `package.json` and `lib/studio.ts` for the current version.
 
