@@ -333,3 +333,12 @@ test('listing analysis uses authorized saved context, never stores image and ret
  globalThis.fetch=async(url,init)=>{calls++;const payload=JSON.parse(init.body);assert.equal(payload.messages[1].content[1].image_url.url,image);assert.equal(payload.response_format.type,'json_schema');return Response.json({choices:[{message:{content:JSON.stringify({summary:'',facts:[{criterion:'Harga',observation:'Rp18 juta per tahun',evidence:'Rp18 juta per tahun',source:'teks',assessment:'belum_pasti'}],questions:['Apakah sudah termasuk air?']})},finish_reason:'stop'}],usage:{prompt_tokens:100,completion_tokens:50}});};
  try{const data={sessionId:session.id,lastUserId:message.id,image};assert.equal((await analyze(req('/api/analyze-listing',null,'POST',data))).status,401);assert.equal((await analyze(req('/api/analyze-listing',user,'POST',data,'https://evil.test'))).status,403);const res=await analyze(req('/api/analyze-listing',user,'POST',data));assert.equal(res.status,200);const result=await res.json();assert.match(result.state.sessions[0].messages.at(-1).content,/Rp18 juta/);assert.ok(!JSON.stringify(result.state).includes(image));const duplicate=await (await analyze(req('/api/analyze-listing',user,'POST',data))).json();assert.equal(duplicate.cached,true);assert.equal(calls,1);}finally{globalThis.fetch=original;}
 });
+
+
+test('search result excerpts are bounded, optional, and tied to returned provider evidence',()=>{
+ const url='https://www.facebook.com/marketplace/item/123';
+ const payload={status:'completed',output:[{type:'web_search_call',status:'completed',results:[{type:'text_result',url,title:'Kontrakan Depok',snippet:'Rumah disewakan di Depok. '+ 'x'.repeat(1500)}]}]};
+ const source=parseSearch(payload,'Contoh kata kunci: kontrakan Depok').sources[0];
+ assert.equal(source.url,url);assert.equal(source.excerpt.length,1000);assert.match(source.excerpt,/Rumah disewakan/);
+ assert.equal(parseSearch(searchPayload()).sources[0].excerpt,undefined);
+});

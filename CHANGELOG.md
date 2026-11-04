@@ -1,3 +1,8 @@
+# 0.6.1
+
+- Simpan dan tampilkan cuplikan hasil pencarian yang disediakan Meta; pengguna dapat meminta analisis cuplikan terhadap profil dengan biaya API. Cuplikan tidak dianggap isi lengkap atau bukti terverifikasi.
+- Integrasi sosial langsung, pembacaan penuh halaman, dan audit log server terpisah belum tersedia.
+
 # Changelog
 
 ## 0.6.0 — 2026-11-04

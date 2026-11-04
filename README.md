@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.6.0** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.6.1** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -148,3 +148,7 @@ This README is maintained separately from the deployed Site. A documentation-onl
 - **0.4.6:** Approved searches use background responses with recoverable status polling. Usage settings show locally recorded daily tokens and provider rate-limit headers when present; these do not show remaining credit. Live-provider testing remains necessary.
 
 - **0.4.7:** Add work location and construct profile-based search queries without generic instructions. Route distances are not calculated. Live search is still reported broken and requires investigation; no live success is claimed.
+
+
+### Cuplikan pencarian (0.6.1)
+Jika Meta menyediakan cuplikan untuk hasil yang lolos penyaringan, cuplikan disimpan dan ditampilkan. Pengguna dapat meminta Muse menganalisis cuplikan terhadap profil, menggunakan kredit API. Isi lengkap tautan tidak diambil dan hasil belum diverifikasi. Integrasi sosial langsung dan audit log server independen belum tersedia.

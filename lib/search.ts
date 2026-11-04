@@ -1,7 +1,7 @@
 import { rankSocialCandidates,type SocialCandidate } from '@/lib/social-sources';
 import { z } from 'zod';
 export function metaUrl(value:string){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&['facebook.com','instagram.com','threads.net','threads.com'].some(h=>u.hostname===h||u.hostname.endsWith('.'+h));}catch{return false;}}
-export const sourceSchema=z.object({url:z.string().max(2000).refine(metaUrl),title:z.string().max(300),kind:z.enum(['retrieved']).optional()});
+export const sourceSchema=z.object({url:z.string().max(2000).refine(metaUrl),title:z.string().max(300),excerpt:z.string().max(1000).optional(),kind:z.enum(['retrieved']).optional()});
 export const searchJobSchema=z.object({id:z.string().min(1).max(100),sessionId:z.string().max(100),query:z.string().min(3).max(600),approvedAt:z.string().max(40),status:z.enum(['running','completed','failed']),providerResponseId:z.string().regex(/^resp_[A-Za-z0-9_-]+$/).max(150).optional(),approvalMessageId:z.string().max(100).optional(),error:z.string().max(600).optional(),finishedAt:z.string().max(40).optional()});
 // Provider hits are untrusted; relevance is based only on the approved plan and available title/snippet evidence.
 export function parseSearch(raw:unknown,plan=''){
@@ -10,7 +10,7 @@ export function parseSearch(raw:unknown,plan=''){
  const hits:SocialCandidate[]=[];
  for(const item of response.output.filter(i=>i.type==='web_search_call'&&i.status==='completed'))for(const hit of item.results??[])if(hit.type==='text_result'&&hit.url&&metaUrl(hit.url)&&hit.url.length<=2000)hits.push({url:hit.url,title:(hit.title||new URL(hit.url).hostname).slice(0,300),snippet:(hit.snippet||'').slice(0,2000),kind:'retrieved'});
  for(const item of response.output.filter(i=>i.type==='message'))for(const block of item.content??[])for(const citation of block.annotations??[])if(citation.type==='url_citation'&&citation.url&&metaUrl(citation.url)&&citation.url.length<=2000)hits.push({url:citation.url,title:(citation.title||new URL(citation.url).hostname).slice(0,300)});
- const sources=rankSocialCandidates(hits,plan).map(({url,title,kind})=>({url,title,...(kind?{kind}: {})}));
+ const sources=rankSocialCandidates(hits,plan).map(({url,title,kind,snippet})=>({url,title,...(snippet?.trim()?{excerpt:snippet.trim().slice(0,1000)}:{}),...(kind?{kind}: {})}));
  const usage=response.usage?{input_tokens:response.usage.input_tokens??undefined,output_tokens:response.usage.output_tokens??undefined}:undefined;
  if(!sources.length)return {content:'Pencarian selesai, tetapi belum ada postingan yang cukup jelas cocok dengan jenis hunian dan lokasi yang diminta. Coba kata kunci atau area lain; ini bukan bukti bahwa listing tidak ada.',sources,usage};
  return {content:'Berikut maksimal lima postingan yang terlihat relevan berdasarkan judul atau cuplikan. Harga, ketersediaan, kondisi, dan kecocokannya belum diverifikasi; periksa sumber sebelum mengambil keputusan.',sources,usage};
