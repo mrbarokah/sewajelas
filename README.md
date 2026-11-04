@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.6.1** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.6.2** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -152,3 +152,7 @@ This README is maintained separately from the deployed Site. A documentation-onl
 
 ### Cuplikan pencarian (0.6.1)
 Jika Meta menyediakan cuplikan untuk hasil yang lolos penyaringan, cuplikan disimpan dan ditampilkan. Pengguna dapat meminta Muse menganalisis cuplikan terhadap profil, menggunakan kredit API. Isi lengkap tautan tidak diambil dan hasil belum diverifikasi. Integrasi sosial langsung dan audit log server independen belum tersedia.
+
+
+### Aktivitas server (0.6.2)
+Jurnal terpisah mencatat sebagian peristiwa pencarian dan analisis tanpa isi pesan atau kunci. Ekspor 200 terbaru tersedia di Riwayat. Lihat `docs/AUDIT_READINESS.md` untuk batasan; belum merupakan audit log lengkap atau sertifikasi.

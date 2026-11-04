@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit';
 import { DEFAULT_MODEL } from '@/lib/models';
 import { parseSearch } from '@/lib/search';
 import { MAX_MESSAGES,type Message } from '@/lib/studio';
@@ -12,6 +13,7 @@ export async function finishSearch(user:string,id:string,raw:unknown){
  const message:Message={id:crypto.randomUUID(),role:'assistant',provider:'live',model:current.state.selectedModel??DEFAULT_MODEL,content:result.content,sources:result.sources,searchId:id};
  const state={...current.state,sessions:current.state.sessions.map(s=>s.id===target.id?{...s,messages:[...s.messages,message]}:s),searches:current.state.searches?.map(j=>j.id===id?{...j,status:'completed' as const,finishedAt:new Date().toISOString()}:j)};
  let revision:number;try{revision=await writeState(user,current.revision,state);}catch(e){const latest=await readState(user);if(latest.state.searches?.some(j=>j.id===id&&j.status==='completed'))return {state:latest.state,revision:latest.revision,status:'completed',usage:await quota(user)};throw e;}
+ await audit(user,'search.completed','success',id);
  await addUsage(user,result.usage?.input_tokens??0,result.usage?.output_tokens??0);
  return {state,revision,status:'completed',usage:await quota(user)};
 }

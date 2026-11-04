@@ -1,0 +1,1 @@
+CREATE INDEX `audit_user_time_idx` ON `audit_events` (`user_id`,`occurred_at`);

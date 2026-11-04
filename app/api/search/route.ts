@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit';
 import { z } from 'zod';
 import { DEFAULT_MODEL } from '@/lib/models';
 import { approvesSearch } from '@/lib/search';
@@ -20,6 +21,7 @@ export async function POST(req:Request){try{
  const job={id:task.id,sessionId:session.id,query:task.query,approvedAt:new Date().toISOString(),status:'running' as const,...(task.approvalMessageId?{approvalMessageId:task.approvalMessageId}:{})};
  // Claim approval durably before any provider call: duplicate/concurrent POST cannot run it twice.
  await writeState(user,snapshot.revision,{...snapshot.state,searches:[...(snapshot.state.searches??[]),job]});
+ await audit(user,'search.approved','success',job.id);
  let uncertain=false;
  try{
   await reserve(user);
@@ -30,11 +32,13 @@ export async function POST(req:Request){try{
   if(raw.status==='completed')return json(await finishSearch(user,job.id,raw));
   if((raw.status!=='queued'&&raw.status!=='in_progress')||typeof raw.id!=='string'||!/^resp_[A-Za-z0-9_-]{1,145}$/.test(raw.id))throw new ApiError(502,'Meta belum mengembalikan status pencarian yang dapat dipantau.');
   const current=await readState(user);const state={...current.state,searches:current.state.searches?.map(j=>j.id===job.id?{...j,providerResponseId:raw.id as string}:j)};
-  const revision=await writeState(user,current.revision,state);uncertain=false;
+  const revision=await writeState(user,current.revision,state);
+  await audit(user,'search.submitted','success',job.id);uncertain=false;
   return json({state,revision,status:'running',jobId:job.id,usage:await quota(user)});
 
  }catch(e){
-  if(uncertain)throw new ApiError(502,'Status pengiriman pencarian belum pasti. Tidak diulang otomatis; periksa sebelum memulai pencarian baru.');
+  if(uncertain){await audit(user,'search.uncertain','unknown',job.id);throw new ApiError(502,'Status pengiriman pencarian belum pasti. Tidak diulang otomatis; periksa sebelum memulai pencarian baru.');}
+  await audit(user,'search.failed','failure',job.id);
   const latest=await readState(user);await writeState(user,latest.revision,{...latest.state,searches:latest.state.searches?.map(j=>j.id===job.id?{...j,status:'failed' as const,error:e instanceof ApiError?e.message:'Pencarian belum berhasil.',finishedAt:new Date().toISOString()}:j)});
   throw e;
  }

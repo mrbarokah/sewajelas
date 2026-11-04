@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 const sqlite=new DatabaseSync(':memory:');
-sqlite.exec('CREATE TABLE studio(user_id TEXT PRIMARY KEY,revision INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL,updated_at INTEGER NOT NULL);CREATE TABLE credentials(user_id TEXT PRIMARY KEY,cipher TEXT NOT NULL,updated_at INTEGER NOT NULL);CREATE TABLE quotas(id TEXT PRIMARY KEY,count INTEGER NOT NULL DEFAULT 0,input_tokens INTEGER NOT NULL DEFAULT 0,output_tokens INTEGER NOT NULL DEFAULT 0);');
+sqlite.exec('CREATE TABLE audit_events(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,occurred_at TEXT NOT NULL,action TEXT NOT NULL,outcome TEXT NOT NULL,correlation_id TEXT NOT NULL,app_version TEXT NOT NULL);CREATE TABLE studio(user_id TEXT PRIMARY KEY,revision INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL,updated_at INTEGER NOT NULL);CREATE TABLE credentials(user_id TEXT PRIMARY KEY,cipher TEXT NOT NULL,updated_at INTEGER NOT NULL);CREATE TABLE quotas(id TEXT PRIMARY KEY,count INTEGER NOT NULL DEFAULT 0,input_tokens INTEGER NOT NULL DEFAULT 0,output_tokens INTEGER NOT NULL DEFAULT 0);');
 export const env = {
   APP_VAULT_KEY: 'unit-test-key-never-used-in-production',
   DB: {
@@ -11,7 +11,8 @@ export const env = {
         bind(...args) {
           return {
             async first() { return statement.get(...args) || null; },
-            async run() { return statement.run(...args); }
+            async run() { return statement.run(...args); },
+            async all() { return {results:statement.all(...args)}; }
           };
         }
       };

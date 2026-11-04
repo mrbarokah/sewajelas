@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit';
 import { z } from 'zod';
 import { body,failure,identity,json,sameOrigin,ApiError,getKey,readState,writeState,quota } from '@/lib/server';
 import { finishSearch } from '@/lib/search-server';
@@ -16,7 +17,7 @@ export async function POST(req:Request){try{
  if(raw.status==='completed')return json(await finishSearch(user,job.id,raw));
  if(['failed','cancelled','incomplete'].includes(raw.status??'')){
   const latest=await readState(user);const state={...latest.state,searches:latest.state.searches?.map(j=>j.id===job.id&&j.status==='running'?{...j,status:'failed' as const,error:searchFailure(raw),finishedAt:new Date().toISOString()}:j)};
-  const revision=await writeState(user,latest.revision,state);return json({state,revision,status:'failed',usage:await quota(user)});
+  const revision=await writeState(user,latest.revision,state);await audit(user,'search.failed','failure',job.id);return json({state,revision,status:'failed',usage:await quota(user)});
  }
  throw new ApiError(502,'Status pencarian dari Meta belum dikenali. Tidak ada pencarian baru yang dijalankan.');
 }catch(e){return failure(e);}}

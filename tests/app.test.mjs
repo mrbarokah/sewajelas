@@ -342,3 +342,14 @@ test('search result excerpts are bounded, optional, and tied to returned provide
  assert.equal(source.url,url);assert.equal(source.excerpt.length,1000);assert.match(source.excerpt,/Rumah disewakan/);
  assert.equal(parseSearch(searchPayload()).sources[0].excerpt,undefined);
 });
+
+
+test('server audit journal is account scoped, excludes content, and is removed with account data',async()=>{
+ const {audit}=await import('../lib/audit.ts');const {GET}=await import('../app/api/audit/route.ts');
+ await audit('audit-one','search.approved','success','job-123');await audit('audit-two','search.failed','failure','job-456');
+ const response=await GET(req('/api/audit','audit-one'));assert.equal(response.status,200);const data=await response.json();
+ assert.equal(data.events.length,1);assert.equal(data.events[0].correlation_id,'job-123');assert.doesNotMatch(JSON.stringify(data),/job-456|token|password|query/);
+ assert.equal((await GET(req('/api/audit',null))).status,401);
+ const deletion=await import('../app/api/delete-data/route.ts');assert.equal((await deletion.POST(req('/api/delete-data','audit-one','POST',{confirmation:'HAPUS'}))).status,200);
+ assert.equal((await (await GET(req('/api/audit','audit-one'))).json()).events.length,0);assert.equal((await (await GET(req('/api/audit','audit-two'))).json()).events.length,1);
+});

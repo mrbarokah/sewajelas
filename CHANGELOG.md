@@ -1,3 +1,9 @@
+# 0.6.2
+
+- Tambah jurnal aktivitas server per akun untuk sebagian peristiwa pencarian dan analisis, serta ekspor 200 peristiwa terbaru dari Riwayat. Jurnal ikut terhapus saat penghapusan data akun.
+- Belum mencakup seluruh peristiwa keamanan, penyimpanan immutable, retensi, atau sertifikasi. Lihat docs/AUDIT_READINESS.md.
+- Integrasi sosial langsung dan pembacaan penuh tautan belum aktif.
+
 # 0.6.1
 
 - Simpan dan tampilkan cuplikan hasil pencarian yang disediakan Meta; pengguna dapat meminta analisis cuplikan terhadap profil dengan biaya API. Cuplikan tidak dianggap isi lengkap atau bukti terverifikasi.
