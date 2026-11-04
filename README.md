@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.6.3** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.6.4** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -160,3 +160,7 @@ Jurnal terpisah mencatat sebagian peristiwa pencarian dan analisis tanpa isi pes
 
 ### Durasi pencarian (0.6.3)
 Timer menampilkan waktu berlalu sejak persetujuan atau pengiriman, bukan bukti Meta masih memproses. Login akun sosial belum tersedia.
+
+
+### Diagnostik pencarian (0.6.4)
+Permintaan dengan keywords menghasilkan rencana yang bisa disetujui. Kueri aktual ditampilkan hanya jika tersedia dari Meta, bersama jumlah kandidat dan hasil yang dipilih; ini tidak membuktikan akses langsung platform atau cakupan menyeluruh.

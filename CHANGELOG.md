@@ -1,3 +1,8 @@
+# 0.6.4
+
+- Kenali permintaan dengan kata “keywords” dan persetujuan “lanjutkan cari dulu”.
+- Tampilkan kueri aktual hanya bila Meta mengembalikannya, serta hitungan kandidat dan hasil terpilih. Bukan integrasi langsung platform.
+
 # 0.6.3
 
 - Tampilkan waktu sejak pencarian dimulai dan durasi pencarian yang selesai. Status yang belum pasti dan pemeriksaan yang berhenti ditampilkan secara terpisah; waktu berlalu bukan bukti Meta masih memproses.

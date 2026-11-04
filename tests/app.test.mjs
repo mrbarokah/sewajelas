@@ -361,3 +361,21 @@ test('elapsed search clock displays seconds and minutes without inventing provid
  assert.equal(elapsedLabel(1000,1000+3605000),'1 jam 0 menit 5 detik');
  assert.equal(elapsedLabel('invalid',1000),null);assert.equal(elapsedLabel(2000,1000),'0 menit 0 detik');
 });
+
+
+test('keyword requests generate correct plans and explicit consent handles natural phrasing',async()=>{
+ const {wantsSearch,buildSearchPlan,approvesSearch}=await import('../lib/search.ts');
+ const profile={facts:{housing:{value:'kontrakan rumah'},location:{value:'Jakarta Selatan sampai maksimal Depok UI'}}};
+ assert.equal(wantsSearch('Oke carikan'),true);assert.equal(wantsSearch('Carikan'),true);assert.equal(wantsSearch('Jangan carikan'),false);
+ for(const message of ['Coba dengan keywords kontrakan Depok ui','Coba carikan dengan keywords kontrakan ui']){assert.equal(wantsSearch(message),true);assert.match(buildSearchPlan(profile,message),/Contoh kata kunci: kontrakan (?:Depok )?ui/i);}
+ assert.equal(approvesSearch('Lanjutkan cari dulu'),true);assert.equal(approvesSearch('Lanjutkan cari tapi jangan sekarang'),false);
+ assert.doesNotMatch(buildSearchPlan(profile,'contoh kata kunci: kontrakan Depok UI'),/kata kunci: kata kunci:/i);
+});
+
+test('search diagnostics only report provider actions and known candidate counts',()=>{
+ const payload={status:'completed',output:[{type:'web_search_call',status:'completed',action:{type:'search',queries:['kontrakan Depok','kontrakan UI']},results:[{type:'text_result',url:'https://www.facebook.com/marketplace/item/1',title:'Kontrakan Depok disewakan'},{type:'text_result',url:'https://www.facebook.com/',title:'Facebook'},{type:'text_result',url:'https://example.org/',title:'other'}]}]};
+ const out=parseSearch(payload,'Contoh kata kunci: kontrakan Depok');
+ assert.deepEqual(out.trace.queries,['kontrakan Depok','kontrakan UI']);assert.equal(out.trace.rawCount,3);assert.equal(out.trace.domains.marketplace,1);assert.equal(out.trace.shown,1);
+ const legacy=parseSearch(searchPayload());assert.deepEqual(legacy.trace.queries,[]);assert.equal(legacy.trace.rawCount,null);
+ const malformed=parseSearch({...payload,output:[{...payload.output[0],action:'unsupported'}]},'kontrakan Depok');assert.deepEqual(malformed.trace.queries,[]);
+});
