@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0 — 2026-11-04
+
+- Add user-initiated screenshot or text listing analysis with profile context, evidence labels, unknowns and owner questions. Images are not stored in the app; results are saved in chat.
+- Meta is called only upon sending the analysis request; no link scraping or outreach. Provider vision capability remains unverified on the owner's live account.
+
 ## 0.5.3 — 2026-11-04
 
 - Add privacy, terms and data-deletion information and an authenticated, explicitly confirmed in-app deletion of account data. Deletion does not remove external provider copies or exports.

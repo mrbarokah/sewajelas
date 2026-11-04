@@ -317,3 +317,19 @@ test('account deletion requires authentication, same origin and explicit confirm
  assert.equal((await (await GET(req('/api/studio',a))).json()).revision,0);assert.equal(await getKey(a),null);assert.equal((await quota(a)).count,0);
  assert.equal((await (await GET(req('/api/studio',b))).json()).revision,1);assert.equal(await getKey(b),'mock-key');assert.equal((await quota(b)).count,1);
 });
+
+test('listing analysis validates images and requires evidence for text claims',async()=>{
+ const {validImageData,formatAnalysis}=await import('../lib/listing-analysis.ts');
+ const image='data:image/png;base64,'+btoa(String.fromCharCode(137,80,78,71,13,10,26,10,...Array(20).fill(0)));
+ assert.equal(validImageData(image),true);assert.equal(validImageData('https://example.com/image.png'),false);assert.equal(validImageData('data:image/png;base64,'+btoa('not really a png file')),false);
+ const result=JSON.stringify({summary:'',facts:[{criterion:'Harga',observation:'Rp18 juta setahun',evidence:'Rp18 juta setahun',source:'teks',assessment:'sesuai'},{criterion:'Air',observation:'Air bersih sepanjang hari',evidence:'PDAM 24 jam',source:'teks',assessment:'sesuai'},{criterion:'Dinding',observation:'Bercak gelap',evidence:'bercak gelap',source:'gambar',assessment:'belum_pasti'}],questions:['Apakah air lancar?']});
+ const out=formatAnalysis(result,'Analisis listing: Rumah Rp18 juta setahun.',true);assert.match(out,/tertulis.*Rp18 juta/);assert.doesNotMatch(out,/Air bersih sepanjang hari/);assert.match(out,/pengamatan AI dari gambar/);assert.match(out,/belum diverifikasi/);assert.equal(formatAnalysis('garbage','',true),null);
+});
+
+test('listing analysis uses authorized saved context, never stores image and returns a cached reply',async()=>{
+ const {POST:analyze}=await import('../app/api/analyze-listing/route.ts');const user='listing-analysis-test';const message={id:'image-request',role:'user',content:'Analisis listing: Rp18 juta per tahun',analysisRequest:{hasImage:true}};const session={...interview('listing-session'),messages:[message]};
+ await PUT(req('/api/studio',user,'PUT',{revision:0,state:{...emptyState,sessions:[session]}}));await db().prepare('INSERT INTO credentials(user_id,cipher,updated_at) VALUES(?,?,?)').bind(user,await encrypt('test-analysis-key',user),0).run();
+ const image='data:image/png;base64,'+btoa(String.fromCharCode(137,80,78,71,13,10,26,10,...Array(20).fill(0)));const original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async(url,init)=>{calls++;const payload=JSON.parse(init.body);assert.equal(payload.messages[1].content[1].image_url.url,image);assert.equal(payload.response_format.type,'json_schema');return Response.json({choices:[{message:{content:JSON.stringify({summary:'',facts:[{criterion:'Harga',observation:'Rp18 juta per tahun',evidence:'Rp18 juta per tahun',source:'teks',assessment:'belum_pasti'}],questions:['Apakah sudah termasuk air?']})},finish_reason:'stop'}],usage:{prompt_tokens:100,completion_tokens:50}});};
+ try{const data={sessionId:session.id,lastUserId:message.id,image};assert.equal((await analyze(req('/api/analyze-listing',null,'POST',data))).status,401);assert.equal((await analyze(req('/api/analyze-listing',user,'POST',data,'https://evil.test'))).status,403);const res=await analyze(req('/api/analyze-listing',user,'POST',data));assert.equal(res.status,200);const result=await res.json();assert.match(result.state.sessions[0].messages.at(-1).content,/Rp18 juta/);assert.ok(!JSON.stringify(result.state).includes(image));const duplicate=await (await analyze(req('/api/analyze-listing',user,'POST',data))).json();assert.equal(duplicate.cached,true);assert.equal(calls,1);}finally{globalThis.fetch=original;}
+});
