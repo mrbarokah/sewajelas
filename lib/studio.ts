@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { profileSchema } from './profile';
 import { searchJobSchema,sourceSchema,searchTraceSchema } from './search';
 import { CHAT_MODELS,DEFAULT_MODEL } from './models';
-export const APP_VERSION='0.6.5';
+export const APP_VERSION='0.6.6';
 export const PROMPT_VERSION='rental-profile-3';
 export const MAX_MESSAGES=200;
 export const MAX_CONTEXT_CHARS=80000;

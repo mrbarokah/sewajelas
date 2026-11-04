@@ -1,3 +1,8 @@
+# 0.6.6
+
+- Tambahkan contoh sinonim ke rencana yang disetujui dan instruksi untuk mencoba variasi serta area yang tercantum jika hasil kurang. Satu request Meta; urutan aktual dikendalikan Meta dan tidak dijamin.
+- Perlihatkan catatan berbasis cuplikan jika petak berpotensi berbeda atau carport belum disebut. Akses sumber langsung, analisis penuh, dan pengelolaan tahap yang deterministik belum tersedia.
+
 # 0.6.5
 
 - Contoh kueri berfokus pada jenis hunian dan lokasi singkat; konteks kebutuhan tetap terpisah untuk penilaian. Instruksi meminta Meta memprioritaskan threads.com dan tidak memperpanjang kata kunci. Meta menentukan kueri aktual.

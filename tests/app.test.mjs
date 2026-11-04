@@ -280,7 +280,7 @@ test('short search plan separates example terms from private comparison criteria
  const {buildSearchPlan,wantsSearch}=await import('../lib/search.ts');
  const profile={facts:{housing:{value:'kontrakan rumah bukan petakan'},location:{value:'Jakarta Selatan sampai maksimal Depok UI'},budget:{value:'maks 20 juta per tahun'},costScope:{value:'khusus sewa saja'}}};
  const p=buildSearchPlan(profile,'Carikan kontrakan sesuai profil saya');
- assert.match(p,/kontrakan Jakarta Selatan \| kontrakan Depok \| kontrakan UI/);assert.match(p,/Kriteria pembanding:.*20 juta/);assert.doesNotMatch(p,/carikan|sesuai profil/i);
+ assert.match(p,/kontrakan Jakarta Selatan \| sewa rumah Jakarta Selatan \| kontrakan Depok \| kontrakan UI/);assert.match(p,/Kriteria pembanding:.*20 juta/);assert.doesNotMatch(p,/carikan|sesuai profil/i);
  const p2=buildSearchPlan(profile,'Coba dengan kata kunci yang lebih singkat\nMisal kontrakan UI depok');assert.match(p2,/Contoh kata kunci: kontrakan UI depok/);assert.equal(wantsSearch('Coba dengan kata kunci yang lebih singkat'),true);assert.equal(wantsSearch('Apa arti kata kunci?'),false);
 });
 
@@ -387,4 +387,14 @@ test('short queries separate UI and Depok and keep rental criteria in comparison
  const plan=buildSearchPlan(profile,'Carikan sesuai profil saya');const [terms,context]=plan.split('\n');assert.match(terms,/kontrakan Depok \| kontrakan UI/);assert.doesNotMatch(terms,/tahun|20 juta|disewakan/);assert.match(context,/20 juta per tahun/);
  const ui=rankSocialCandidates([{url:'https://www.threads.com/@x/post/1',title:'Kontrakan UI dekat kampus'}],'Contoh kata kunci: kontrakan UI');assert.equal(ui.length,1);
  const other=rankSocialCandidates([{url:'https://www.threads.com/@x/post/2',title:'Kontrakan Surabaya'}],'Contoh kata kunci: kontrakan UI');assert.equal(other.length,0);
+});
+
+
+test('approved search plan includes synonyms, only provided areas and evidence-bound notes',async()=>{
+ const {buildSearchPlan,parseSearch}=await import('../lib/search.ts');
+ const p=buildSearchPlan({facts:{housing:{value:'kontrakan rumah bukan petakan'},location:{value:'UI'},mustHave:{value:'carport'}}},'carikan kontrakan UI');
+ assert.match(p,/kontrakan UI \| sewa rumah UI/);assert.doesNotMatch(p,/Jagakarsa|Cinere/);assert.match(p,/carport/);
+ const payload={status:'completed',output:[{type:'web_search_call',status:'completed',results:[{type:'text_result',url:'https://www.facebook.com/marketplace/item/111',title:'Kontrakan petakan UI'}]}]};
+ const result=parseSearch(payload,p);assert.equal(result.sources.length,1);assert.match(result.sources[0].notes.join(' '),/menyebut petak/);assert.match(result.sources[0].notes.join(' '),/carport belum ditemukan/);
+ const out=parseSearch({...payload,output:[{...payload.output[0],results:[{...payload.output[0].results[0],title:'Kontrakan UI bukan petakan carport'}]}]},p);assert.equal(out.sources[0].notes,undefined);
 });

@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.6.5** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.6.6** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -168,3 +168,7 @@ Permintaan dengan keywords menghasilkan rencana yang bisa disetujui. Kueri aktua
 
 ### Pencarian singkat (0.6.5)
 Contoh kata kunci memisahkan jenis hunian dan area; kriteria lain untuk analisis. Instruksi mengutamakan threads.com; Meta memilih kueri aktual. Foto belum diambil otomatis dari tautan.
+
+
+### Rencana alternatif (0.6.6)
+Contoh sinonim dan area tersimpan dipreview untuk satu request Meta; Meta yang memilih dan tidak menjamin urutan tahap. Catatan petak dan carport didasarkan hanya judul/cuplikan. Orkestrasi bertahap deterministik belum tersedia.
