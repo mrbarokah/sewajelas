@@ -283,3 +283,9 @@ test('short search plan separates example terms from private comparison criteria
  assert.match(p,/kontrakan Jakarta Selatan \| kontrakan Depok UI/);assert.match(p,/Kriteria pembanding:.*20 juta/);assert.doesNotMatch(p,/carikan|sesuai profil/i);
  const p2=buildSearchPlan(profile,'Coba dengan kata kunci yang lebih singkat\nMisal kontrakan UI depok');assert.match(p2,/Contoh kata kunci: kontrakan UI depok/);assert.equal(wantsSearch('Coba dengan kata kunci yang lebih singkat'),true);assert.equal(wantsSearch('Apa arti kata kunci?'),false);
 });
+
+test('retrieved public links are marked unverified and never presented as cited answers',()=>{
+ const payload={status:'completed',output:[{type:'web_search_call',status:'completed',results:[{type:'text_result',url:'https://www.facebook.com/marketplace/item/123',title:'Possible listing'},{type:'text_result',url:'https://www.threads.net/@x/post/123',title:'Post'},{type:'text_result',url:'https://www.instagram.com/p/abc',title:'Photo'},{type:'text_result',url:'https://facebook.com.evil.example/x',title:'Bad'}]},{type:'message',content:[{type:'output_text',text:'Invented price',annotations:[]}]}]};
+ const result=parseSearch(payload);assert.equal(result.sources.length,3);assert.ok(result.sources.every(s=>s.kind==='retrieved'));assert.doesNotMatch(result.content,/Invented price/);assert.match(result.content,/belum tentu/);
+ assert.throws(()=>parseSearch({...payload,output:[{...payload.output[0],status:'in_progress'}]}));
+});

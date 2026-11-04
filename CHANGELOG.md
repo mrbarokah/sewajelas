@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 — 2026-11-04
+
+- Default the renter experience to live Muse and remove practice entry points from the main flow. Existing session history is preserved.
+- Request Meta web-search hits and display allowed-domain hits without citations as unverified search results, separate from cited answers. No direct social-platform integration is provided.
+- Real-world platform coverage and search quality remain subject to live testing and provider access.
+
 ## 0.5.0 — 2026-11-04
 
 - Propose short example keywords separately from comparison criteria before approval. Muse chooses actual provider queries; direct Marketplace filters remain unavailable.
