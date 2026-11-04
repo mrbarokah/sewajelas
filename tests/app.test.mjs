@@ -353,3 +353,11 @@ test('server audit journal is account scoped, excludes content, and is removed w
  const deletion=await import('../app/api/delete-data/route.ts');assert.equal((await deletion.POST(req('/api/delete-data','audit-one','POST',{confirmation:'HAPUS'}))).status,200);
  assert.equal((await (await GET(req('/api/audit','audit-one'))).json()).events.length,0);assert.equal((await (await GET(req('/api/audit','audit-two'))).json()).events.length,1);
 });
+
+
+test('elapsed search clock displays seconds and minutes without inventing provider status',async()=>{
+ const {elapsedLabel}=await import('../lib/elapsed.ts');
+ assert.equal(elapsedLabel('2026-11-04T00:00:00.000Z',Date.parse('2026-11-04T00:03:07Z')),'3 menit 7 detik');
+ assert.equal(elapsedLabel(1000,1000+3605000),'1 jam 0 menit 5 detik');
+ assert.equal(elapsedLabel('invalid',1000),null);assert.equal(elapsedLabel(2000,1000),'0 menit 0 detik');
+});

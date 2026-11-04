@@ -1,6 +1,6 @@
 # SewaJelas
 
-**Current application version: 0.6.2** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
+**Current application version: 0.6.3** · [Changelog](CHANGELOG.md) · [Master handover](MASTER_HANDOVER.md)
 
 
 Version 0.4.8 improves recovery after uncertain search submissions and normalizes search terms. Live Meta search remains unverified with the owner's key; do not claim the root cause is fixed. See the changelog.
@@ -156,3 +156,7 @@ Jika Meta menyediakan cuplikan untuk hasil yang lolos penyaringan, cuplikan disi
 
 ### Aktivitas server (0.6.2)
 Jurnal terpisah mencatat sebagian peristiwa pencarian dan analisis tanpa isi pesan atau kunci. Ekspor 200 terbaru tersedia di Riwayat. Lihat `docs/AUDIT_READINESS.md` untuk batasan; belum merupakan audit log lengkap atau sertifikasi.
+
+
+### Durasi pencarian (0.6.3)
+Timer menampilkan waktu berlalu sejak persetujuan atau pengiriman, bukan bukti Meta masih memproses. Login akun sosial belum tersedia.

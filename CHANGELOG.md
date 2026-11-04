@@ -1,3 +1,8 @@
+# 0.6.3
+
+- Tampilkan waktu sejak pencarian dimulai dan durasi pencarian yang selesai. Status yang belum pasti dan pemeriksaan yang berhenti ditampilkan secara terpisah; waktu berlalu bukan bukti Meta masih memproses.
+- Login Facebook, Instagram, dan Threads masih belum tersedia.
+
 # 0.6.2
 
 - Tambah jurnal aktivitas server per akun untuk sebagian peristiwa pencarian dan analisis, serta ekspor 200 peristiwa terbaru dari Riwayat. Jurnal ikut terhapus saat penghapusan data akun.
